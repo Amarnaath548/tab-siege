@@ -52,6 +52,7 @@ const MAX_TOWERS: int = 4
 var pending_refresh_strikes: int = 0
 var refresh_strike_interval: float = 0.4
 var refresh_strike_timer: float = 0.0
+var _hit_flash_tween: Tween = null
 
 # Node references
 var grid_manager: GridManager = null
@@ -288,6 +289,9 @@ func _start_drag() -> void:
 	
 	is_dragging = true
 	z_index = 20 # Render above other tabs during drag
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.05, 1.05), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 	var synth = get_node_or_null("/root/AudioSynth")
 	if synth:
 		synth.play_drag_pickup()
@@ -303,6 +307,9 @@ func _end_drag(drop_mouse_pos: Vector2) -> void:
 	z_index = 0
 	drag_start_mouse_pos = Vector2.ZERO
 
+	var scale_tween := create_tween()
+	scale_tween.tween_property(self, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 	if grid_manager == null:
 		return
 
@@ -313,7 +320,12 @@ func _end_drag(drop_mouse_pos: Vector2) -> void:
 	var cooldown: float = gd.get_drag_cooldown() if gd else 15.0
 
 	if grid_manager.can_relocate_tab_to(self, target_grid_pos, max_range):
+		var target_pos := grid_manager.grid_to_world_center(target_grid_pos)
+		var current_pos := position
 		grid_manager.relocate_tab(self, target_grid_pos, max_range)
+		position = current_pos
+		var pos_tween := create_tween()
+		pos_tween.tween_property(self, "position", target_pos, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		# Trigger 3-second inert downtime and 15-second cooldown
 		inert_timer = 3.0
 		drag_cooldown_timer = cooldown
@@ -322,7 +334,9 @@ func _end_drag(drop_mouse_pos: Vector2) -> void:
 			synth.play_drag_drop()
 	else:
 		# Snap back to original tile
-		position = grid_manager.grid_to_world_center(original_grid_pos)
+		var return_pos := grid_manager.grid_to_world_center(original_grid_pos)
+		var pos_tween := create_tween()
+		pos_tween.tween_property(self, "position", return_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 	queue_redraw()
 
@@ -360,6 +374,7 @@ func _on_close_sacrifice_clicked() -> void:
 				break
 		grid_manager.unregister_tab(self)
 
+	_spawn_death_particles()
 	tab_sacrificed.emit(self)
 	queue_free()
 
@@ -381,11 +396,59 @@ func take_damage(amount: float, attacker_faction: String) -> void:
 	if enemy_capture_pause_timer > 0.0 and attacker_faction != "player":
 		return
 
+	# Tab hit flash (white for 0.1s) using Tween
+	if _hit_flash_tween and _hit_flash_tween.is_valid():
+		_hit_flash_tween.kill()
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(self, "modulate", Color.WHITE, 0.1).from(Color(8.0, 8.0, 8.0, 1.0))
+
 	current_hp = maxf(0.0, current_hp - amount)
 	queue_redraw()
 
 	if current_hp <= 0.0:
+		_on_tab_death()
 		_on_captured(attacker_faction)
+
+func _on_tab_death() -> void:
+	_screen_shake()
+	_spawn_death_particles()
+	var synth = get_node_or_null("/root/AudioSynth")
+	if synth and synth.has_method("play_tab_destroyed"):
+		synth.play_tab_destroyed()
+
+func _screen_shake() -> void:
+	var cam := get_viewport().get_camera_2d()
+	var target_obj: Object = cam if cam != null else get_tree().current_scene
+	if target_obj == null:
+		return
+	var prop: String = "offset" if cam != null else "position"
+	var orig: Vector2 = target_obj.get(prop)
+	var shake_tween := create_tween()
+	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-5, 5), randf_range(-5, 5)), 0.03)
+	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-3, 3), randf_range(-3, 3)), 0.03)
+	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-2, 2), randf_range(-2, 2)), 0.03)
+	shake_tween.tween_property(target_obj, prop, orig, 0.04)
+
+func _spawn_death_particles() -> void:
+	var particles := CPUParticles2D.new()
+	particles.emitting = false
+	particles.one_shot = true
+	particles.explosiveness = 1.0
+	particles.lifetime = 0.45
+	particles.amount = 24
+	particles.spread = 180.0
+	particles.gravity = Vector2.ZERO
+	particles.initial_velocity_min = 60.0
+	particles.initial_velocity_max = 140.0
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 4.5
+	particles.color = Color(1.0, 0.4, 0.3) if is_rival() else Color(0.3, 0.8, 1.0)
+	particles.global_position = global_position
+	var parent_node := get_parent() if get_parent() else get_tree().current_scene
+	if parent_node:
+		parent_node.add_child(particles)
+		particles.emitting = true
+		get_tree().create_timer(particles.lifetime + 0.1).timeout.connect(particles.queue_free)
 
 func _on_captured(by_faction: String) -> void:
 	current_hp = max_hp

@@ -55,10 +55,30 @@ func _on_time_updated(seconds_left: float) -> void:
 	else:
 		timer_label.add_theme_color_override("font_color", Color.WHITE)
 
+var _prev_coins: int = -1
+
 func _on_coins_changed(new_amount: int) -> void:
+	if _prev_coins >= 0 and new_amount > _prev_coins:
+		_show_floating_coins(new_amount - _prev_coins)
+	_prev_coins = new_amount
 	coins_label.text = "$%d" % new_amount
 	buy_tower_btn.disabled = new_amount < 20
 	strike_btn.disabled = new_amount < 15
+
+func _show_floating_coins(amount: int) -> void:
+	var label := Label.new()
+	label.text = "+$%d" % amount
+	label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	label.add_theme_font_size_override("font_size", 16)
+	label.position = coins_label.global_position + Vector2(10, 20)
+	label.z_index = 100
+	add_child(label)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(label, "position:y", label.position.y - 25.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "modulate:a", 0.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(label.queue_free)
 
 func _on_refresh_charges_changed(remaining: int, max_c: int) -> void:
 	refresh_label.text = "REFRESH: %d/%d" % [remaining, max_c]
@@ -83,7 +103,10 @@ func _on_triangulation_updated(current: float, target: float) -> void:
 
 func _on_match_ended(victory: bool, reason: String) -> void:
 	end_modal.visible = true
+	var synth = get_node_or_null("/root/AudioSynth")
 	if victory:
+		if synth and synth.has_method("play_victory"):
+			synth.play_victory()
 		result_title.text = "VICTORY! TAB BAR TRIANGULATED"
 		result_title.add_theme_color_override("font_color", Color(0.2, 0.9, 0.4))
 		result_desc.text = reason
@@ -93,6 +116,8 @@ func _on_match_ended(victory: bool, reason: String) -> void:
 			pins_earned = 3
 		pins_earned_label.text = "+%d PINS EARNED!" % pins_earned
 	else:
+		if synth and synth.has_method("play_defeat"):
+			synth.play_defeat()
 		result_title.text = "DEFEAT"
 		result_title.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 		result_desc.text = reason

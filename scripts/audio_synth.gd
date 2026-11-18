@@ -72,7 +72,19 @@ func play_defeat() -> void:
 func play_merge() -> void:
 	_play_sound("merge", 1.2, -4.0)
 
+func play_shoot() -> void:
+	_play_sound("shoot", randf_range(0.95, 1.05), -6.0)
+
+func play_hit() -> void:
+	_play_sound("hit", randf_range(0.9, 1.1), -5.0)
+
+func play_tab_destroyed() -> void:
+	_play_sound("tab_destroyed", 1.0, -2.0)
+
 func _generate_all_sounds() -> void:
+	_sounds["shoot"] = _generate_tone(0.06, 900.0, 300.0, "square", 0.25)
+	_sounds["hit"] = _generate_tone(0.05, 520.0, 140.0, "triangle", 0.45)
+	_sounds["tab_destroyed"] = _generate_arpeggio([380.0, 280.0, 190.0, 95.0], 0.08, "sawtooth", 0.6)
 	_sounds["click"] = _generate_tone(0.04, 880.0, 440.0, "square", 0.3)
 	_sounds["pickup"] = _generate_tone(0.06, 300.0, 600.0, "sine", 0.4)
 	_sounds["drop"] = _generate_tone(0.08, 500.0, 200.0, "sine", 0.5)

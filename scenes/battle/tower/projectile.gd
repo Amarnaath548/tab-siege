@@ -11,6 +11,9 @@ var faction: String = "player" # "player" or "rival"
 
 func _ready() -> void:
 	queue_redraw()
+	var synth = get_node_or_null("/root/AudioSynth")
+	if synth and synth.has_method("play_shoot"):
+		synth.play_shoot()
 
 func init_projectile(from_pos: Vector2, target: Node, dmg: float, p_faction: String) -> void:
 	position = from_pos
@@ -37,6 +40,9 @@ func _process(delta: float) -> void:
 func _hit_target() -> void:
 	if is_instance_valid(target_node) and target_node.has_method("take_damage"):
 		target_node.take_damage(damage, faction)
+	var synth = get_node_or_null("/root/AudioSynth")
+	if synth and synth.has_method("play_hit"):
+		synth.play_hit()
 	queue_free()
 
 func _draw() -> void:
