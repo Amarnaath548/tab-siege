@@ -8,6 +8,12 @@ signal build_tower_requested()
 signal player_strike_requested()
 signal atlas_menu_requested()
 signal restart_requested()
+signal tutorial_skipped()
+
+var tutorial_highlight: Panel
+var tutorial_label: Label
+var tutorial_skip_btn: Button
+var tutorial_container: PanelContainer
 
 @onready var timer_label: Label = $TopBar/HBox/TimerContainer/TimerLabel
 @onready var coins_label: Label = $TopBar/HBox/CoinsContainer/CoinsLabel
@@ -31,6 +37,7 @@ signal restart_requested()
 func _ready() -> void:
 	end_modal.visible = false
 	hold_container.visible = false
+	setup_tutorial_ui()
 
 	var bm = get_node_or_null("/root/BattleManager")
 	if bm:
@@ -102,6 +109,7 @@ func _on_triangulation_updated(current: float, target: float) -> void:
 		hold_container.visible = false
 
 func _on_match_ended(victory: bool, reason: String) -> void:
+	hide_tutorial()
 	end_modal.visible = true
 	var synth = get_node_or_null("/root/AudioSynth")
 	if victory:
@@ -132,3 +140,93 @@ func _on_strike_pressed() -> void:
 	var bm = get_node_or_null("/root/BattleManager")
 	if bm and bm.spend_coins(15):
 		player_strike_requested.emit()
+
+func setup_tutorial_ui() -> void:
+	if tutorial_highlight != null:
+		return
+
+	tutorial_highlight = Panel.new()
+	tutorial_highlight.name = "TutorialHighlight"
+	tutorial_highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var h_style := StyleBoxFlat.new()
+	h_style.draw_center = false
+	h_style.border_width_left = 3
+	h_style.border_width_right = 3
+	h_style.border_width_top = 3
+	h_style.border_width_bottom = 3
+	h_style.border_color = Color(1.0, 0.85, 0.2, 0.95)
+	h_style.corner_radius_top_left = 6
+	h_style.corner_radius_top_right = 6
+	h_style.corner_radius_bottom_left = 6
+	h_style.corner_radius_bottom_right = 6
+	tutorial_highlight.add_theme_stylebox_override("panel", h_style)
+	tutorial_highlight.visible = false
+	add_child(tutorial_highlight)
+
+	tutorial_container = PanelContainer.new()
+	tutorial_container.name = "TutorialContainer"
+	var c_style := StyleBoxFlat.new()
+	c_style.bg_color = Color(0.08, 0.11, 0.18, 0.92)
+	c_style.border_width_left = 1
+	c_style.border_width_right = 1
+	c_style.border_width_top = 1
+	c_style.border_width_bottom = 1
+	c_style.border_color = Color(0.4, 0.6, 0.9, 0.7)
+	c_style.corner_radius_top_left = 8
+	c_style.corner_radius_top_right = 8
+	c_style.corner_radius_bottom_left = 8
+	c_style.corner_radius_bottom_right = 8
+	c_style.content_margin_left = 14
+	c_style.content_margin_right = 14
+	c_style.content_margin_top = 6
+	c_style.content_margin_bottom = 6
+	tutorial_container.add_theme_stylebox_override("panel", c_style)
+	tutorial_container.visible = false
+	add_child(tutorial_container)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 16)
+	tutorial_container.add_child(hbox)
+
+	tutorial_label = Label.new()
+	tutorial_label.name = "TutorialLabel"
+	tutorial_label.add_theme_font_size_override("font_size", 16)
+	tutorial_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	hbox.add_child(tutorial_label)
+
+	tutorial_skip_btn = Button.new()
+	tutorial_skip_btn.name = "TutorialSkipBtn"
+	tutorial_skip_btn.text = "Skip"
+	tutorial_skip_btn.focus_mode = Control.FOCUS_NONE
+	tutorial_skip_btn.pressed.connect(func(): tutorial_skipped.emit())
+	hbox.add_child(tutorial_skip_btn)
+
+func show_tutorial_step(text: String, rect: Rect2) -> void:
+	if tutorial_highlight == null:
+		setup_tutorial_ui()
+	tutorial_container.visible = true
+	tutorial_highlight.visible = true
+	tutorial_label.text = text
+	update_tutorial_rect(rect)
+	_update_banner_position()
+
+func update_tutorial_rect(rect: Rect2) -> void:
+	if tutorial_highlight != null and tutorial_highlight.visible:
+		tutorial_highlight.position = rect.position
+		tutorial_highlight.size = rect.size
+
+func _update_banner_position() -> void:
+	if tutorial_container == null:
+		return
+	tutorial_container.reset_size()
+	var vp_size := get_viewport().get_visible_rect().size
+	tutorial_container.position = Vector2(
+		maxf(20.0, (vp_size.x - tutorial_container.size.x) * 0.5),
+		54.0
+	)
+
+func hide_tutorial() -> void:
+	if tutorial_container != null:
+		tutorial_container.visible = false
+	if tutorial_highlight != null:
+		tutorial_highlight.visible = false

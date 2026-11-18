@@ -11,6 +11,7 @@ signal upgrade_unlocked(upgrade_id: String, new_level: int)
 var pins: int = 0
 var battles_played: int = 0
 var battles_won: int = 0
+var tutorial_done: bool = false
 
 # Upgrade paths and their current levels (0 to 3)
 var upgrades: Dictionary = {
@@ -147,7 +148,8 @@ func save_data() -> void:
 		"pins": pins,
 		"battles_played": battles_played,
 		"battles_won": battles_won,
-		"upgrades": upgrades
+		"upgrades": upgrades,
+		"tutorial_done": tutorial_done
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
@@ -167,6 +169,7 @@ func load_data() -> void:
 			pins = parsed.get("pins", 0)
 			battles_played = parsed.get("battles_played", 0)
 			battles_won = parsed.get("battles_won", 0)
+			tutorial_done = parsed.get("tutorial_done", false)
 			var saved_upgrades = parsed.get("upgrades", {})
 			if saved_upgrades is Dictionary:
 				for k in saved_upgrades:
