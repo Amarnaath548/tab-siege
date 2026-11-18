@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ci3o8p5m2q7x1"]
+
+[ext_resource type="Script" path="res://scenes/battle/tab/tab_base.gd" id="1_tab"]
+
+[node name="TabBase" type="Node2D"]
+script = ExtResource("1_tab")

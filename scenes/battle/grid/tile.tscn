@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://chv024d35jkmq"]
+
+[ext_resource type="Script" path="res://scenes/battle/grid/tile.gd" id="1_tile"]
+
+[node name="Tile" type="Control"]
+custom_minimum_size = Vector2(104, 88)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 104.0
+offset_bottom = 88.0
+script = ExtResource("1_tile")

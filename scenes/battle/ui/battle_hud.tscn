@@ -1,0 +1,207 @@
+[gd_scene load_steps=2 format=3 uid="uid://ci7m8v4q1n3p9"]
+
+[ext_resource type="Script" path="res://scenes/battle/ui/battle_hud.gd" id="1_hud"]
+
+[node name="BattleHUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="Panel" parent="."]
+custom_minimum_size = Vector2(1280, 56)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 56.0
+grow_horizontal = 2
+
+[node name="HBox" type="HBoxContainer" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_right = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 28
+
+[node name="TimerContainer" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TopBar/HBox/TimerContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "TIME: "
+
+[node name="TimerLabel" type="Label" parent="TopBar/HBox/TimerContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "03:00"
+
+[node name="CoinsContainer" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="TopBar/HBox/CoinsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "COINS: "
+
+[node name="CoinsLabel" type="Label" parent="TopBar/HBox/CoinsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "$60"
+
+[node name="RefreshContainer" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+
+[node name="RefreshLabel" type="Label" parent="TopBar/HBox/RefreshContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "REFRESH: 2/2"
+
+[node name="FocusContainer" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FocusLabel" type="Label" parent="TopBar/HBox/FocusContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "FOCUS: Tab #1 (+50% BOOST)"
+
+[node name="HoldContainer" type="HBoxContainer" parent="TopBar/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HoldLabel" type="Label" parent="TopBar/HBox/HoldContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "L-HOLD: 0.0s / 30.0s"
+
+[node name="HoldBar" type="ProgressBar" parent="TopBar/HBox/HoldContainer"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+size_flags_vertical = 4
+max_value = 30.0
+show_percentage = false
+
+[node name="BottomBar" type="Panel" parent="."]
+custom_minimum_size = Vector2(1280, 52)
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -52.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="HBox" type="HBoxContainer" parent="BottomBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_right = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="BuyTowerBtn" type="Button" parent="BottomBar/HBox"]
+custom_minimum_size = Vector2(180, 36)
+layout_mode = 2
+size_flags_vertical = 4
+text = "+ BUY TOWER ($20)"
+
+[node name="StrikeBtn" type="Button" parent="BottomBar/HBox"]
+custom_minimum_size = Vector2(220, 36)
+layout_mode = 2
+size_flags_vertical = 4
+text = "DIRECT CURSOR STRIKE ($15)"
+
+[node name="InfoLabel" type="Label" parent="BottomBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Controls: Single-Click Tab: Focus | Double-Click: Refresh Rush | Drag Tab: Relocate (<= 4 tiles) | Click [X]: Sacrifice Shield"
+vertical_alignment = 1
+
+[node name="EndModal" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 0.85)
+
+[node name="Panel" type="Panel" parent="EndModal"]
+custom_minimum_size = Vector2(500, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="EndModal/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="ResultTitle" type="Label" parent="EndModal/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "VICTORY!"
+horizontal_alignment = 1
+
+[node name="ResultDesc" type="Label" parent="EndModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "Tab Bar Triangulation Held for 30s."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PinsEarnedLabel" type="Label" parent="EndModal/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 20
+text = "+2 PINS EARNED"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="EndModal/Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnHBox" type="HBoxContainer" parent="EndModal/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="AtlasBtn" type="Button" parent="EndModal/Panel/VBox/BtnHBox"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "BOOKMARK ATLAS"
+
+[node name="RetryBtn" type="Button" parent="EndModal/Panel/VBox/BtnHBox"]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+text = "PLAY AGAIN"

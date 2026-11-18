@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ci3o8p5m9q7y2"]
+
+[ext_resource type="Script" path="res://scenes/battle/triangulation/triangulation_overlay.gd" id="1_tri"]
+
+[node name="TriangulationOverlay" type="Node2D"]
+script = ExtResource("1_tri")

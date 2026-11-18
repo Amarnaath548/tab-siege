@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cx6i8k9v2q4r8"]
+
+[ext_resource type="Script" path="res://scenes/battle/cursor_strike/cursor_strike.gd" id="1_strike"]
+
+[node name="CursorStrike" type="Node2D"]
+script = ExtResource("1_strike")
