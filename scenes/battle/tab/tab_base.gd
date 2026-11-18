@@ -46,7 +46,7 @@ const DOUBLE_CLICK_WINDOW: float = 0.35
 
 # Attached towers
 var towers: Array[TabTower] = []
-const MAX_TOWERS: int = 2
+const MAX_TOWERS: int = 4
 
 # Refresh Rush strike burst queue
 var pending_refresh_strikes: int = 0
@@ -238,14 +238,47 @@ func _launch_mini_cursor_strike() -> void:
 	get_tree().current_scene.add_child(strike)
 
 func merge_available_towers() -> void:
-	if towers.size() >= 2:
-		var t1: TabTower = towers[0]
-		var t2: TabTower = towers[1]
-		if is_instance_valid(t1) and is_instance_valid(t2) and t1.can_merge_with(t2):
-			t1.merge_upgrade()
-			towers.erase(t2)
-			t2.queue_free()
-			_reposition_towers()
+	merge_cascade()
+
+# Safe Cascade Merge Loop:
+# Merges identical tiers (tier < 4) and repeats until no duplicate tiers remain on the tab
+func merge_cascade() -> void:
+	var merged := true
+	while merged:
+		merged = false
+		for i in range(towers.size()):
+			var t1: TabTower = towers[i]
+			if not is_instance_valid(t1) or t1.is_queued_for_deletion():
+				continue
+			if int(t1.tier) >= int(TabTower.Tier.TIER_4):
+				continue
+
+			for j in range(i + 1, towers.size()):
+				var t2: TabTower = towers[j]
+				if not is_instance_valid(t2) or t2.is_queued_for_deletion():
+					continue
+				if t1.tier == t2.tier and int(t1.tier) < int(TabTower.Tier.TIER_4):
+					# Found a duplicate tier pair: remove t2 cleanly
+					towers.erase(t2)
+					remove_child(t2)
+					t2.queue_free()
+
+					# Upgrade surviving turret t1 to tier + 1
+					t1.set_tier((int(t1.tier) + 1) as TabTower.Tier)
+
+					var synth = get_node_or_null("/root/AudioSynth") if is_inside_tree() else null
+					if synth:
+						synth.play_merge()
+
+					# Repeat loop to check if the new tier matches an existing turret
+					merged = true
+					break
+			if merged:
+				break
+
+	# Sort towers descending by tier (e.g. [T4, T3, T2, T1])
+	towers.sort_custom(func(a: TabTower, b: TabTower): return int(a.tier) > int(b.tier))
+	_reposition_towers()
 
 # Tab Drag Relocation
 func _start_drag() -> void:
@@ -363,22 +396,40 @@ func _on_captured(by_faction: String) -> void:
 		grid_manager.check_triangulation()
 
 func add_tower(tier: TabTower.Tier = TabTower.Tier.TIER_1) -> bool:
-	if towers.size() >= MAX_TOWERS:
-		return false
 	var tower: TabTower = TowerScene.instantiate()
 	tower.tier = tier
 	tower.faction = "player" if is_player() else ("rival" if is_rival() else "neutral")
 	add_child(tower)
 	towers.append(tower)
-	_reposition_towers()
+	
+	# Execute safe cascade merging across existing turrets
+	merge_cascade()
 	return true
 
+func get_tower_tiers() -> Array[int]:
+	var result: Array[int] = []
+	for t in towers:
+		if is_instance_valid(t) and not t.is_queued_for_deletion():
+			result.append(int(t.tier))
+	return result
+
 func _reposition_towers() -> void:
-	if towers.size() == 1:
+	var count := towers.size()
+	if count == 0:
+		return
+	if count == 1:
 		towers[0].position = Vector2(0, 10)
-	elif towers.size() >= 2:
-		towers[0].position = Vector2(-20, 10)
-		towers[1].position = Vector2(20, 10)
+	elif count == 2:
+		towers[0].position = Vector2(-22, 10)
+		towers[1].position = Vector2(22, 10)
+	elif count == 3:
+		towers[0].position = Vector2(-28, 10)
+		towers[1].position = Vector2(0, 10)
+		towers[2].position = Vector2(28, 10)
+	else:
+		var spacing: float = 68.0 / float(count - 1)
+		for idx in range(count):
+			towers[idx].position = Vector2(-34.0 + (idx * spacing), 10)
 
 func _draw() -> void:
 	var tab_w: float = 96.0

@@ -70,12 +70,7 @@ func _on_triangulation_detected(is_active: bool, l_tabs: Array) -> void:
 func _on_build_tower_requested() -> void:
 	var focused = BattleManager.active_focused_tab
 	if focused != null and is_instance_valid(focused) and focused.has_method("add_tower"):
-		var success: bool = focused.add_tower(TabTower.Tier.TIER_1)
-		if success:
-			AudioSynth.play_merge()
-		else:
-			# If full, attempt merge upgrade
-			focused.merge_available_towers()
+		focused.add_tower(TabTower.Tier.TIER_1)
 
 func _on_player_strike_requested() -> void:
 	var rival_tabs := get_tree().get_nodes_in_group("tabs").filter(func(t): return is_instance_valid(t) and t.has_method("is_rival") and t.is_rival() and t.is_alive())

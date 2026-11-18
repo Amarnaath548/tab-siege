@@ -148,6 +148,9 @@ func clear_tile_highlights() -> void:
 	for tile: GridTile in tiles.values():
 		tile.set_highlight(GridTile.HighlightState.NORMAL)
 
+func _get_battle_manager() -> Node:
+	return get_node_or_null("/root/BattleManager") if is_inside_tree() else null
+
 # L-Shape Triangulation Detector
 # Checks if there are 3 player-held tabs forming an orthogonal L-tromino
 func check_triangulation() -> Dictionary:
@@ -163,10 +166,11 @@ func check_triangulation() -> Dictionary:
 			player_positions.append(tab_positions[tab])
 
 	var num_tabs := player_tabs.size()
+	var bm = _get_battle_manager()
 	if num_tabs < 3:
 		triangulation_detected.emit(false, [])
-		if BattleManager:
-			BattleManager.update_triangulation_status(false, [])
+		if bm:
+			bm.update_triangulation_status(false, [])
 		return {"found": false, "tabs": []}
 
 	# Check all 3-tab combinations
@@ -181,27 +185,27 @@ func check_triangulation() -> Dictionary:
 				if _is_l_corner(pos_i, pos_j, pos_k):
 					var l_tabs = [player_tabs[i], player_tabs[j], player_tabs[k]]
 					triangulation_detected.emit(true, l_tabs)
-					if BattleManager:
-						BattleManager.update_triangulation_status(true, l_tabs)
+					if bm:
+						bm.update_triangulation_status(true, l_tabs)
 					return {"found": true, "tabs": l_tabs, "corner": player_tabs[i]}
 				
 				if _is_l_corner(pos_j, pos_i, pos_k):
 					var l_tabs = [player_tabs[j], player_tabs[i], player_tabs[k]]
 					triangulation_detected.emit(true, l_tabs)
-					if BattleManager:
-						BattleManager.update_triangulation_status(true, l_tabs)
+					if bm:
+						bm.update_triangulation_status(true, l_tabs)
 					return {"found": true, "tabs": l_tabs, "corner": player_tabs[j]}
 				
 				if _is_l_corner(pos_k, pos_i, pos_j):
 					var l_tabs = [player_tabs[k], player_tabs[i], player_tabs[j]]
 					triangulation_detected.emit(true, l_tabs)
-					if BattleManager:
-						BattleManager.update_triangulation_status(true, l_tabs)
+					if bm:
+						bm.update_triangulation_status(true, l_tabs)
 					return {"found": true, "tabs": l_tabs, "corner": player_tabs[k]}
 
 	triangulation_detected.emit(false, [])
-	if BattleManager:
-		BattleManager.update_triangulation_status(false, [])
+	if bm:
+		bm.update_triangulation_status(false, [])
 	return {"found": false, "tabs": []}
 
 func _is_l_corner(corner: Vector2i, arm1: Vector2i, arm2: Vector2i) -> bool:

@@ -19,6 +19,7 @@ func _init() -> void:
 	test_battle_manager()
 	test_manhattan_distance()
 	test_drag_deadzone()
+	test_turret_cascade_merging()
 	
 	print("--- ALL COMPONENT 1 TESTS PASSED SUCCESSFULLY! ---")
 	quit(0)
@@ -96,3 +97,40 @@ func test_drag_deadzone() -> void:
 	var distance_large = start_pos.distance_to(large_move)
 	assert(distance_large >= deadzone, "Move >= 8px SHOULD trigger drag")
 	print("Drag deadzone test passed!")
+
+func test_turret_cascade_merging() -> void:
+	print("Testing Turret Cascade Merging up to Tier 4...")
+	var TabBaseScene: PackedScene = preload("res://scenes/battle/tab/tab_base.tscn")
+	var tab: Node = TabBaseScene.instantiate()
+	root.add_child(tab)
+
+	# 1 turret bought: produces [T1]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [1], "1 turret bought must produce [T1], got %s" % str(tab.get_tower_tiers()))
+
+	# 2 turrets bought: produces [T2]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [2], "2 turrets bought must merge into [T2], got %s" % str(tab.get_tower_tiers()))
+
+	# 3 turrets bought: produces [T2, T1]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [2, 1], "3 turrets bought must produce [T2, T1], got %s" % str(tab.get_tower_tiers()))
+
+	# 4 turrets bought: produces [T3]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [3], "4 turrets bought must cascade merge into [T3], got %s" % str(tab.get_tower_tiers()))
+
+	# 5, 6, 7 turrets bought
+	tab.add_tower(TabTower.Tier.TIER_1) # 5 -> [3, 1]
+	assert(tab.get_tower_tiers() == [3, 1], "5 turrets must produce [T3, T1], got %s" % str(tab.get_tower_tiers()))
+	tab.add_tower(TabTower.Tier.TIER_1) # 6 -> [3, 2]
+	assert(tab.get_tower_tiers() == [3, 2], "6 turrets must produce [T3, T2], got %s" % str(tab.get_tower_tiers()))
+	tab.add_tower(TabTower.Tier.TIER_1) # 7 -> [3, 2, 1]
+	assert(tab.get_tower_tiers() == [3, 2, 1], "7 turrets must produce [T3, T2, T1], got %s" % str(tab.get_tower_tiers()))
+
+	# 8 turrets bought: produces [T4]
+	tab.add_tower(TabTower.Tier.TIER_1) # 8 -> [4]
+	assert(tab.get_tower_tiers() == [4], "8 turrets bought must cascade merge into [T4], got %s" % str(tab.get_tower_tiers()))
+
+	tab.queue_free()
+	print("Turret Cascade Merging tests passed!")

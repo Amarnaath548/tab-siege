@@ -164,17 +164,29 @@ func test_tab_base_and_combat() -> void:
 	assert(tab.is_inert() == false, "New tab should not be inert")
 	assert(tab.is_shielded() == false, "New tab should not be shielded")
 	
-	# Add tower
+	# Add tower 1: produces [T1]
 	var added: bool = tab.add_tower(TabTower.Tier.TIER_1)
 	assert(added == true, "Should add tower")
-	assert(tab.towers.size() == 1, "Tab should have 1 tower")
+	assert(tab.get_tower_tiers() == [1], "Tab should have [T1]")
 	
-	# Add second tower and test merge
+	# Add tower 2: automatically cascade merges into [T2]
 	tab.add_tower(TabTower.Tier.TIER_1)
-	assert(tab.towers.size() == 2, "Tab should have 2 towers")
-	tab.merge_available_towers()
-	assert(tab.towers.size() == 1, "Towers should merge into 1")
-	assert(tab.towers[0].tier == TabTower.Tier.TIER_2, "Merged tower should be Tier 2")
+	assert(tab.get_tower_tiers() == [2], "Towers should auto-merge into [T2]")
+	
+	# Add tower 3: produces [T2, T1]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [2, 1], "Towers should be [T2, T1]")
+
+	# Add tower 4: cascade merges into [T3]
+	tab.add_tower(TabTower.Tier.TIER_1)
+	assert(tab.get_tower_tiers() == [3], "Towers should cascade merge into [T3]")
+
+	# Add towers 5, 6, 7, 8: cascade merges into [T4]
+	tab.add_tower(TabTower.Tier.TIER_1) # 5
+	tab.add_tower(TabTower.Tier.TIER_1) # 6
+	tab.add_tower(TabTower.Tier.TIER_1) # 7
+	tab.add_tower(TabTower.Tier.TIER_1) # 8
+	assert(tab.get_tower_tiers() == [4], "8 towers should cascade merge into [T4]")
 	
 	# Test Sacrifice Shield application
 	tab.apply_sacrifice_shield(4.0)
