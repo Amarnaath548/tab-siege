@@ -417,17 +417,17 @@ func _on_tab_death() -> void:
 		synth.play_tab_destroyed()
 
 func _screen_shake() -> void:
-	var cam := get_viewport().get_camera_2d()
-	var target_obj: Object = cam if cam != null else get_tree().current_scene
-	if target_obj == null:
+	var battle_node: Node2D = get_node_or_null("/root/Main/ContentHolder/Battle") as Node2D
+	if battle_node == null and get_tree() != null and get_tree().root != null:
+		battle_node = get_tree().root.find_child("Battle", true, false) as Node2D
+	if battle_node == null:
 		return
-	var prop: String = "offset" if cam != null else "position"
-	var orig: Vector2 = target_obj.get(prop)
+	var orig: Vector2 = battle_node.position
 	var shake_tween := create_tween()
-	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-5, 5), randf_range(-5, 5)), 0.03)
-	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-3, 3), randf_range(-3, 3)), 0.03)
-	shake_tween.tween_property(target_obj, prop, orig + Vector2(randf_range(-2, 2), randf_range(-2, 2)), 0.03)
-	shake_tween.tween_property(target_obj, prop, orig, 0.04)
+	shake_tween.tween_property(battle_node, "position", orig + Vector2(randf_range(-5, 5), randf_range(-5, 5)), 0.03)
+	shake_tween.tween_property(battle_node, "position", orig + Vector2(randf_range(-3, 3), randf_range(-3, 3)), 0.03)
+	shake_tween.tween_property(battle_node, "position", orig + Vector2(randf_range(-2, 2), randf_range(-2, 2)), 0.03)
+	shake_tween.tween_property(battle_node, "position", orig, 0.04)
 
 func _spawn_death_particles() -> void:
 	var particles := CPUParticles2D.new()
