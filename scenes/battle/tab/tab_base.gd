@@ -59,9 +59,97 @@ var grid_manager: GridManager = null
 const CursorStrikeScene: PackedScene = preload("res://scenes/battle/cursor_strike/cursor_strike.tscn")
 const TowerScene: PackedScene = preload("res://scenes/battle/tower/tower.tscn")
 
+var _pin_sprite: Sprite2D = null
+var pin_sprite: Sprite2D:
+	get:
+		if _pin_sprite == null:
+			_setup_sprites()
+		return _pin_sprite
+
+var _shield_sprite: Sprite2D = null
+var shield_sprite: Sprite2D:
+	get:
+		if _shield_sprite == null:
+			_setup_sprites()
+		return _shield_sprite
+
+const COLOR_PLAYER := Color(0.25, 0.85, 1.0) # Cyan/Blue
+const COLOR_RIVAL := Color(0.95, 0.25, 0.25)  # Crimson
+const COLOR_FOCUS := Color(1.0, 0.82, 0.15)  # Gold
+
+static func _load_atlas(filename: String) -> Texture2D:
+	var paths := [
+		"res://assets/sprites/" + filename,
+		"res://sprites/" + filename
+	]
+	for p in paths:
+		if ResourceLoader.exists(p):
+			return load(p) as Texture2D
+	return null
+
+func _setup_sprites() -> void:
+	if _pin_sprite == null:
+		_pin_sprite = get_node_or_null("PinSprite") as Sprite2D
+		if _pin_sprite == null:
+			_pin_sprite = Sprite2D.new()
+			_pin_sprite.name = "PinSprite"
+			add_child(_pin_sprite)
+		var pin_tex := _load_atlas("pin_icon.tres")
+		if pin_tex != null:
+			_pin_sprite.texture = pin_tex
+			var max_dim := maxf(pin_tex.get_width(), pin_tex.get_height())
+			if max_dim > 0.0:
+				var s := 22.0 / max_dim
+				_pin_sprite.scale = Vector2(s, s)
+		_pin_sprite.position = Vector2(-48.0 + 14.0, 40.0 - 22.0)
+		_pin_sprite.visible = false
+		_pin_sprite.z_index = 5
+
+	if _shield_sprite == null:
+		_shield_sprite = get_node_or_null("ShieldSprite") as Sprite2D
+		if _shield_sprite == null:
+			_shield_sprite = Sprite2D.new()
+			_shield_sprite.name = "ShieldSprite"
+			add_child(_shield_sprite)
+		var shield_tex := _load_atlas("shield_icon.tres")
+		if shield_tex != null:
+			_shield_sprite.texture = shield_tex
+			var max_dim := maxf(shield_tex.get_width(), shield_tex.get_height())
+			if max_dim > 0.0:
+				var s := 56.0 / max_dim
+				_shield_sprite.scale = Vector2(s, s)
+		_shield_sprite.position = Vector2(0, 0)
+		_shield_sprite.visible = false
+		_shield_sprite.z_index = 6
+
+func _update_visual_nodes() -> void:
+	if _pin_sprite == null or _shield_sprite == null:
+		_setup_sprites()
+
+	var base_col := COLOR_RIVAL if faction == Faction.RIVAL else (COLOR_FOCUS if is_active_focused else COLOR_PLAYER)
+
+	if _pin_sprite:
+		_pin_sprite.visible = (drag_cooldown_timer > 0.0)
+		_pin_sprite.modulate = base_col
+
+	if _shield_sprite:
+		if is_shielded():
+			_shield_sprite.visible = true
+			var pulse: float = (sin(Time.get_ticks_msec() * 0.008) + 1.0) * 0.5
+			var alpha: float = 0.5 + pulse * 0.45
+			_shield_sprite.modulate = Color(base_col.r, base_col.g, base_col.b, alpha)
+		else:
+			_shield_sprite.visible = false
+
+func _enter_tree() -> void:
+	_setup_sprites()
+	_update_visual_nodes()
+
 func _ready() -> void:
 	add_to_group("tabs")
 	current_hp = max_hp
+	_setup_sprites()
+	_update_visual_nodes()
 	queue_redraw()
 
 func set_faction(new_faction: Faction) -> void:
@@ -69,7 +157,12 @@ func set_faction(new_faction: Faction) -> void:
 	for t in towers:
 		if is_instance_valid(t):
 			t.faction = "player" if faction == Faction.PLAYER else ("rival" if faction == Faction.RIVAL else "neutral")
+			if t.has_method("set_active_focus"):
+				t.set_active_focus(is_active_focused and is_player())
+			elif t.has_method("_update_visuals"):
+				t._update_visuals()
 			t.queue_redraw()
+	_update_visual_nodes()
 	queue_redraw()
 
 func is_player() -> bool: return faction == Faction.PLAYER
@@ -84,9 +177,15 @@ func can_generate_coins() -> bool:
 
 func set_focused(focused: bool) -> void:
 	is_active_focused = focused
+	for t in towers:
+		if is_instance_valid(t) and t.has_method("set_active_focus"):
+			t.set_active_focus(focused and is_player())
+	_update_visual_nodes()
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	_update_visual_nodes()
+
 	# Tick cooldowns and state timers
 	if inert_timer > 0.0:
 		inert_timer = maxf(0.0, inert_timer - delta)
@@ -235,7 +334,7 @@ func _launch_mini_cursor_strike() -> void:
 	# Target closest or lowest HP rival tab
 	var target: TabBase = rival_tabs[randi() % rival_tabs.size()]
 	var strike: CursorStrike = CursorStrikeScene.instantiate()
-	strike.init_strike(target, 12.0, "player", true)
+	strike.init_strike(target, 12.0, "player", true, is_active_focused)
 	get_tree().current_scene.add_child(strike)
 
 func merge_available_towers() -> void:
@@ -462,6 +561,8 @@ func add_tower(tier: TabTower.Tier = TabTower.Tier.TIER_1) -> bool:
 	var tower: TabTower = TowerScene.instantiate()
 	tower.tier = tier
 	tower.faction = "player" if is_player() else ("rival" if is_rival() else "neutral")
+	if tower.has_method("set_active_focus"):
+		tower.set_active_focus(is_active_focused and is_player())
 	add_child(tower)
 	towers.append(tower)
 	
@@ -508,11 +609,11 @@ func _draw() -> void:
 		Faction.PLAYER:
 			header_col = Color(0.18, 0.38, 0.65)
 			body_col = Color(0.14, 0.20, 0.28, 0.95)
-			border_col = Color(0.3, 0.6, 0.95)
+			border_col = COLOR_FOCUS if is_active_focused else COLOR_PLAYER
 		Faction.RIVAL:
 			header_col = Color(0.65, 0.22, 0.22)
 			body_col = Color(0.28, 0.14, 0.14, 0.95)
-			border_col = Color(0.95, 0.35, 0.35)
+			border_col = COLOR_RIVAL
 		Faction.NEUTRAL:
 			header_col = Color(0.28, 0.32, 0.38)
 			body_col = Color(0.18, 0.20, 0.24, 0.95)
@@ -521,7 +622,7 @@ func _draw() -> void:
 	# 1. Bold flat-color ring for Active Tab Focus
 	if is_active_focused and is_player():
 		var ring_rect := rect.grow(5.0)
-		draw_rect(ring_rect, Color(1.0, 0.78, 0.15, 0.95), false, 3.5)
+		draw_rect(ring_rect, COLOR_FOCUS, false, 3.5)
 
 	# 2. Tab Body background & border
 	draw_rect(rect, body_col, true)
@@ -533,7 +634,7 @@ func _draw() -> void:
 	draw_rect(header_rect, border_col, false, 1.0)
 
 	# 4. Favicon dot
-	var fav_col := Color(0.3, 0.9, 0.9) if is_player() else (Color(1.0, 0.4, 0.4) if is_rival() else Color(0.8, 0.8, 0.8))
+	var fav_col := COLOR_FOCUS if (is_active_focused and is_player()) else (COLOR_PLAYER if is_player() else (COLOR_RIVAL if is_rival() else Color(0.8, 0.8, 0.8)))
 	draw_circle(Vector2(-tab_w * 0.5 + 10.0, -tab_h * 0.5 + 10.0), 4.0, fav_col)
 
 	# 5. Tab Title string
@@ -554,22 +655,12 @@ func _draw() -> void:
 	var hp_col := Color(0.2, 0.85, 0.3) if hp_pct > 0.4 else Color(0.95, 0.7, 0.1)
 	draw_rect(hp_fill_rect, hp_col, true)
 
-	# 8. Flat Pin Icon (shown when Drag Relocation is on 15s cooldown)
-	if drag_cooldown_timer > 0.0:
-		var pin_pos := Vector2(-tab_w * 0.5 + 12.0, tab_h * 0.5 - 24.0)
-		draw_circle(pin_pos, 4.0, Color(1.0, 0.3, 0.3))
-		draw_line(pin_pos, pin_pos + Vector2(0, 8), Color.WHITE, 1.5)
+	# Note: Pin and Shield icons are rendered via Sprite2D nodes (pin_sprite, shield_sprite)
+	# with AtlasTextures pin_icon.tres and shield_icon.tres instead of primitive drawn shapes.
 
-	# 9. Inert downtime visual (3s relocation downtime)
+	# 8. Inert downtime visual (3s relocation downtime)
 	if is_inert():
 		var inert_overlay := Rect2(-tab_w * 0.5, -tab_h * 0.5, tab_w, tab_h)
 		draw_rect(inert_overlay, Color(0.1, 0.1, 0.15, 0.6), true)
 		var inert_str := "INERT (%.1fs)" % inert_timer
-		draw_string(font, Vector2(-32, 2), inert_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(1.0, 0.8, 0.2))
-
-	# 10. Shield Barrier Visual (Close Tab Sacrifice Shield)
-	if is_shielded():
-		var shield_rect := rect.grow(4.0)
-		var pulse: float = (sin(Time.get_ticks_msec() * 0.008) + 1.0) * 0.5
-		var shield_col := Color(0.2, 0.9, 1.0, 0.4 + pulse * 0.4)
-		draw_rect(shield_rect, shield_col, false, 3.0)
+		draw_string(font, Vector2(-32, 2), inert_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, COLOR_FOCUS)

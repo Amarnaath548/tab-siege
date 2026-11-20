@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" format=3 uid="uid://d37bgwdxl84mn"]
+
+[ext_resource type="Texture2D" uid="uid://dcmkjauay8n8f" path="res://sprites/Futuristic_game_sprite_sheet_icons_e105b866_2K-removebg-preview (1).png" id="1_jdo5w"]
+
+[resource]
+atlas = ExtResource("1_jdo5w")
+region = Rect2(207, 215, 88, 121)

@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://b5m8v4q1n3p15"]
+[gd_scene format=3 uid="uid://b5m8v4q1n3p15"]
 
-[ext_resource type="Script" path="res://scenes/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://bsof3ds381x7e" path="res://scenes/main.gd" id="1_main"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=725214761]
 script = ExtResource("1_main")
 
-[node name="ContentHolder" type="Node" parent="."]
+[node name="ContentHolder" type="Node" parent="." unique_id=317917319]

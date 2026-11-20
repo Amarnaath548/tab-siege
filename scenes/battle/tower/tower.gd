@@ -3,6 +3,7 @@ extends Node2D
 
 # Turret mounted on a TabBase. Fires projectiles at enemy tabs or cursors.
 # Supports 4 tiers with scaling combat stats and distinct visual indicators.
+# Renders AtlasTexture sprites (turret_t1 .. turret_t4) modulated by faction/focus.
 
 signal tower_fired()
 signal tower_merged(new_tier: int)
@@ -22,18 +23,100 @@ var fire_timer: float = 0.0
 var base_fire_interval: float = 1.2
 var base_damage: float = 12.0
 var attack_range: float = 380.0
+var is_active_focused: bool = false
+
+var _sprite: Sprite2D = null
+var sprite: Sprite2D:
+	get:
+		if _sprite == null:
+			_setup_sprite()
+		return _sprite
+
+const COLOR_PLAYER := Color(0.25, 0.85, 1.0) # Cyan/Blue
+const COLOR_RIVAL := Color(0.95, 0.25, 0.25)  # Crimson
+const COLOR_FOCUS := Color(1.0, 0.82, 0.15)  # Gold
 
 const ProjectileScene: PackedScene = preload("res://scenes/battle/tower/projectile.tscn")
 
-func _ready() -> void:
+static func _load_atlas(filename: String) -> Texture2D:
+	var paths := [
+		"res://assets/sprites/" + filename,
+		"res://sprites/" + filename
+	]
+	for p in paths:
+		if ResourceLoader.exists(p):
+			return load(p) as Texture2D
+	return null
+
+func _enter_tree() -> void:
+	_setup_sprite()
 	_update_tier_stats()
+	_update_visuals()
+
+func _ready() -> void:
+	_setup_sprite()
+	_update_tier_stats()
+	_update_visuals()
 	queue_redraw()
+
+func _setup_sprite() -> void:
+	if _sprite == null:
+		_sprite = get_node_or_null("Sprite2D") as Sprite2D
+		if _sprite == null:
+			_sprite = Sprite2D.new()
+			_sprite.name = "Sprite2D"
+			add_child(_sprite)
+	if _sprite != null and _sprite.texture == null:
+		_update_visuals()
 
 func set_tier(new_tier: Tier) -> void:
 	tier = new_tier
 	_update_tier_stats()
+	_update_visuals()
 	queue_redraw()
 	tower_merged.emit(int(tier))
+
+func set_active_focus(focused: bool) -> void:
+	is_active_focused = focused
+	_update_visuals()
+	queue_redraw()
+
+func _update_visuals() -> void:
+	if _sprite == null:
+		_setup_sprite()
+	if _sprite == null:
+		return
+
+	var tex: Texture2D = null
+	match tier:
+		Tier.TIER_1:
+			tex = _load_atlas("turret_t1.tres")
+		Tier.TIER_2:
+			tex = _load_atlas("turret_t2.tres")
+		Tier.TIER_3:
+			tex = _load_atlas("turret_t3.tres")
+		Tier.TIER_4:
+			tex = _load_atlas("turret_t4.tres")
+
+	if tex != null:
+		_sprite.texture = tex
+		var max_dim := maxf(tex.get_width(), tex.get_height())
+		if max_dim > 0.0:
+			var target_size := 26.0 + (int(tier) - 1) * 2.0
+			var s := target_size / max_dim
+			_sprite.scale = Vector2(s, s)
+
+	# The turret sprite barrel points UP in the atlas sheet.
+	# Rotate 90 degrees (PI * 0.5) so it aligns with forward (+X) firing axis.
+	_sprite.rotation = PI * 0.5
+
+	# Modulate colors for Player (cyan/blue), Rival (crimson), and Active Focus (gold)
+	if faction == "rival":
+		_sprite.modulate = COLOR_RIVAL
+	elif is_active_focused:
+		_sprite.modulate = COLOR_FOCUS
+	else:
+		_sprite.modulate = COLOR_PLAYER
 
 func _update_tier_stats() -> void:
 	match tier:
@@ -128,53 +211,8 @@ func _fire_projectile() -> void:
 	tower_fired.emit()
 
 func _draw() -> void:
-	var base_col: Color
-	var barrel_col: Color
-	var accent_col: Color
-
-	match tier:
-		Tier.TIER_1:
-			base_col = Color(0.2, 0.4, 0.7) if faction == "player" else Color(0.7, 0.25, 0.25)
-			barrel_col = Color(0.7, 0.85, 1.0) if faction == "player" else Color(1.0, 0.6, 0.6)
-			accent_col = Color(0.25, 0.85, 1.0)
-		Tier.TIER_2:
-			base_col = Color(0.15, 0.52, 0.42) if faction == "player" else Color(0.75, 0.35, 0.2)
-			barrel_col = Color(0.45, 0.95, 0.7) if faction == "player" else Color(1.0, 0.7, 0.5)
-			accent_col = Color(0.2, 1.0, 0.5)
-		Tier.TIER_3:
-			base_col = Color(0.65, 0.48, 0.12) if faction == "player" else Color(0.85, 0.4, 0.1)
-			barrel_col = Color(1.0, 0.88, 0.35) if faction == "player" else Color(1.0, 0.8, 0.4)
-			accent_col = Color(1.0, 0.85, 0.1)
-		Tier.TIER_4:
-			base_col = Color(0.55, 0.15, 0.65) if faction == "player" else Color(0.85, 0.15, 0.45)
-			barrel_col = Color(1.0, 0.4, 0.95) if faction == "player" else Color(1.0, 0.4, 0.7)
-			accent_col = Color(0.9, 0.2, 1.0)
-
-	# Tier 4 outer glow ring
-	if tier == Tier.TIER_4:
-		draw_circle(Vector2.ZERO, 12.0, Color(accent_col.r, accent_col.g, accent_col.b, 0.25))
-
-	# Turret circle body
-	draw_circle(Vector2.ZERO, 9.0, base_col)
-	draw_circle(Vector2.ZERO, 7.0, Color(0.12, 0.16, 0.22))
-
-	# Barrel(s)
-	match tier:
-		Tier.TIER_1:
-			draw_rect(Rect2(Vector2(0, -2.5), Vector2(11, 5)), barrel_col, true)
-		Tier.TIER_2:
-			draw_rect(Rect2(Vector2(0, -4.5), Vector2(11, 3.5)), barrel_col, true)
-			draw_rect(Rect2(Vector2(0, 1.0), Vector2(11, 3.5)), barrel_col, true)
-		Tier.TIER_3:
-			draw_rect(Rect2(Vector2(0, -5.5), Vector2(12, 3)), barrel_col, true)
-			draw_rect(Rect2(Vector2(0, -1.5), Vector2(13, 3)), accent_col, true)
-			draw_rect(Rect2(Vector2(0, 2.5), Vector2(12, 3)), barrel_col, true)
-		Tier.TIER_4:
-			draw_rect(Rect2(Vector2(0, -6), Vector2(13, 2.5)), barrel_col, true)
-			draw_rect(Rect2(Vector2(0, -2), Vector2(15, 4)), accent_col, true)
-			draw_rect(Rect2(Vector2(0, 3.5), Vector2(13, 2.5)), barrel_col, true)
-
-	# Distinct text label T1, T2, T3, T4 above the turret for instant top-down readability
+	# Subtle tier badge label above the turret for instant readability
 	var font := ThemeDB.fallback_font
 	var tier_label_str := "T%d" % int(tier)
-	draw_string(font, Vector2(-6, -10), tier_label_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 9, accent_col)
+	var badge_col := COLOR_RIVAL if faction == "rival" else (COLOR_FOCUS if is_active_focused else COLOR_PLAYER)
+	draw_string(font, Vector2(-6, -11), tier_label_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 9, badge_col)

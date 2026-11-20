@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://56h4n1tjk47k"
-path="res://.godot/imported/tab_siege_sheet.png-6a6cb39f391408b2cac1f690b6d98979.ctex"
+uid="uid://dcmkjauay8n8f"
+path="res://.godot/imported/Futuristic_game_sprite_sheet_icons_e105b866_2K-removebg-preview (1).png-1c8e609285d94fa0e07a156abe9ed751.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tab_siege_sheet.png"
-dest_files=["res://.godot/imported/tab_siege_sheet.png-6a6cb39f391408b2cac1f690b6d98979.ctex"]
+source_file="res://sprites/Futuristic_game_sprite_sheet_icons_e105b866_2K-removebg-preview (1).png"
+dest_files=["res://.godot/imported/Futuristic_game_sprite_sheet_icons_e105b866_2K-removebg-preview (1).png-1c8e609285d94fa0e07a156abe9ed751.ctex"]
 
 [params]
 
