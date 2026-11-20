@@ -24,7 +24,7 @@ var upgrades: Dictionary = {
 # Upgrade definitions with metadata, max levels, and costs
 const UPGRADE_DEFS: Dictionary = {
 	"drag_relocation": {
-		"name": "Extended Drag Range",
+		"name": "Tab-Fold Drag Range",
 		"icon_symbol": "PIN",
 		"max_level": 3,
 		"costs": [1, 2, 3],
@@ -60,7 +60,7 @@ const UPGRADE_DEFS: Dictionary = {
 		]
 	},
 	"sacrifice_shield": {
-		"name": "Reinforced Tab Shield",
+		"name": "Sacrifice Tab Shield",
 		"icon_symbol": "SHIELD",
 		"max_level": 3,
 		"costs": [1, 2, 3],

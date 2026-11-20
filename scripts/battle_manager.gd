@@ -21,6 +21,7 @@ var match_time_remaining: float = BASE_MATCH_DURATION
 var coins: int = 60
 var refresh_rush_charges: int = 2
 var max_refresh_rush_charges: int = 2
+var tabs_lost_this_match: int = 0
 
 # Active Tab Focus (Single active tab reference)
 var active_focused_tab: Node = null
@@ -79,15 +80,20 @@ func _process(delta: float) -> void:
 			end_match(true, "Tab Bar Triangulation Victory! Held L-formation for 30s.")
 
 func _get_game_data() -> Node:
-	return get_node_or_null("/root/GameData")
+	if is_inside_tree():
+		return get_node_or_null("/root/GameData")
+	return null
 
 func _get_audio_synth() -> Node:
-	return get_node_or_null("/root/AudioSynth")
+	if is_inside_tree():
+		return get_node_or_null("/root/AudioSynth")
+	return null
 
 func start_match() -> void:
 	is_match_active = true
 	match_time_remaining = BASE_MATCH_DURATION
 	coins = 60
+	tabs_lost_this_match = 0
 	var gd = _get_game_data()
 	max_refresh_rush_charges = gd.get_max_refresh_charges() if gd else 2
 	refresh_rush_charges = max_refresh_rush_charges
@@ -104,6 +110,50 @@ func start_match() -> void:
 	refresh_charges_changed.emit(refresh_rush_charges, max_refresh_rush_charges)
 	active_tab_focus_changed.emit(null)
 	triangulation_hold_updated.emit(0.0, TRIANGULATION_TARGET_TIME)
+
+func record_player_tab_lost() -> void:
+	tabs_lost_this_match += 1
+
+func can_sacrifice_tab(tab: Node, grid: Node = null) -> bool:
+	if not is_instance_valid(tab) or tab.is_queued_for_deletion():
+		return false
+	# Disabled if player has <= 1 tab
+	var player_tabs: Array = []
+	if tab.is_inside_tree() and tab.get_tree() != null:
+		player_tabs = tab.get_tree().get_nodes_in_group("tabs").filter(
+			func(t): return is_instance_valid(t) and not t.is_queued_for_deletion() and t.has_method("is_player") and t.is_player() and t.is_alive()
+		)
+	elif tab.get_parent() != null:
+		player_tabs = tab.get_parent().get_children().filter(
+			func(t): return is_instance_valid(t) and not t.is_queued_for_deletion() and t.has_method("is_player") and t.is_player() and t.is_alive()
+		)
+	else:
+		player_tabs = [tab]
+	if player_tabs.size() <= 1:
+		return false
+	
+	# Disabled if < 3 viable grid tiles remain
+	var gm = grid if grid != null else (tab.grid_manager if "grid_manager" in tab else null)
+	if gm != null and "tiles" in gm:
+		var empty_count := 0
+		for cell_pos in gm.tiles.keys():
+			if gm.has_method("get_tab_at") and gm.get_tab_at(cell_pos) == null:
+				empty_count += 1
+		if empty_count < 3:
+			return false
+	return true
+
+func find_best_sacrifice_shield_target(source_tab: Node, adjacent_tabs: Array) -> Node:
+	if adjacent_tabs.is_empty():
+		return null
+	# Prioritizes shielding an L-shape tab
+	for tab in adjacent_tabs:
+		if is_instance_valid(tab) and tab in triangulation_nodes:
+			return tab
+	for tab in adjacent_tabs:
+		if is_instance_valid(tab) and tab != source_tab:
+			return tab
+	return null
 
 func add_coins(amount: int) -> void:
 	if amount <= 0:
@@ -197,10 +247,10 @@ func end_match(victory: bool, reason: String) -> void:
 	var gd = _get_game_data()
 	var pins_earned: int = 0
 	if victory:
-		pins_earned = 1
-		if triangulation_hold_time >= TRIANGULATION_TARGET_TIME:
-			pins_earned += 1
-		if match_time_remaining >= 60.0:
+		pins_earned = 1 # 1 base
+		if tabs_lost_this_match == 0:
+			pins_earned += 1 # +1 for zero tabs lost
+		if match_time_remaining >= 60.0: # +1 for winning under 2:00
 			pins_earned += 1
 		pins_earned = clampi(pins_earned, 1, 3)
 		if gd:

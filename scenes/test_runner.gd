@@ -84,17 +84,17 @@ func test_manhattan_distance() -> void:
 	print("Manhattan distance test passed!")
 
 func test_drag_deadzone() -> void:
-	print("Testing 8-pixel drag deadzone logic...")
+	print("Testing 10-pixel drag deadzone logic...")
 	var start_pos := Vector2(100.0, 100.0)
-	var deadzone: float = 8.0
+	var deadzone: float = 10.0
 	
-	var small_move := Vector2(104.0, 102.0)
+	var small_move := Vector2(106.0, 105.0)
 	var distance_small = start_pos.distance_to(small_move)
-	assert(distance_small < deadzone, "Move < 8px should NOT trigger drag")
+	assert(distance_small < deadzone, "Move < 10px should NOT trigger drag")
 	
-	var large_move := Vector2(109.0, 105.0)
+	var large_move := Vector2(110.0, 108.0)
 	var distance_large = start_pos.distance_to(large_move)
-	assert(distance_large >= deadzone, "Move >= 8px SHOULD trigger drag")
+	assert(distance_large >= deadzone, "Move >= 10px SHOULD trigger drag")
 	print("Drag deadzone test passed!")
 
 # Mock tab for testing grid logic
@@ -201,8 +201,8 @@ func test_tab_base_and_combat() -> void:
 	tab.take_damage(25.0, "rival")
 	assert(tab.current_hp == (old_hp - 25.0), "Unshielded tab should take 25 damage")
 
-	# Test 8-pixel drag deadzone logic
-	assert(tab.DRAG_DEADZONE == 8.0, "Deadzone must be exactly 8 pixels")
+	# Test 10-pixel drag deadzone logic
+	assert(tab.DRAG_DEADZONE == 10.0, "Deadzone must be exactly 10 pixels")
 	
 	# Test turret tier label remains upright when turret rotates
 	var tower: TabTower = tab.towers[0]

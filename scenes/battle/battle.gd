@@ -36,18 +36,19 @@ func _ready() -> void:
 func _setup_match() -> void:
 	BattleManager.start_match()
 
-	# Spawn Starting Player Tabs (Bottom-Left)
-	_player_tab_1 = _spawn_tab(Vector2i(1, 4), TabBaseScript.Faction.PLAYER, "Tab #1", true)
-	_player_tab_2 = _spawn_tab(Vector2i(2, 4), TabBaseScript.Faction.PLAYER, "Tab #2", true)
+	# Spawn Starting Player Tabs at (1,1) and (1,3)
+	_player_tab_1 = _spawn_tab(Vector2i(1, 1), TabBaseScript.Faction.PLAYER, "My Tab", true)
+	_player_tab_2 = _spawn_tab(Vector2i(1, 3), TabBaseScript.Faction.PLAYER, "Tab #2", true)
 
-	# Spawn Starting Rival Tabs (Top-Right)
-	_spawn_tab(Vector2i(5, 1), TabBaseScript.Faction.RIVAL, "rival://nexus", true)
-	_spawn_tab(Vector2i(5, 2), TabBaseScript.Faction.RIVAL, "rival://hub", true)
+	# Spawn Starting Rival Tabs at (4,1) and (4,3)
+	_spawn_tab(Vector2i(4, 1), TabBaseScript.Faction.RIVAL, "Rival Tab 1", true)
+	_spawn_tab(Vector2i(4, 3), TabBaseScript.Faction.RIVAL, "Enemy Tab", true)
 
-	# Spawn Neutral Contest Tabs (Center)
-	_spawn_tab(Vector2i(2, 2), TabBaseScript.Faction.NEUTRAL, "about:blank", false)
-	_spawn_tab(Vector2i(4, 2), TabBaseScript.Faction.NEUTRAL, "about:cache", false)
-	_spawn_tab(Vector2i(3, 3), TabBaseScript.Faction.NEUTRAL, "about:memory", false)
+	# Spawn Neutral Contest Tabs in the center (Blank Tab)
+	_spawn_tab(Vector2i(2, 2), TabBaseScript.Faction.NEUTRAL, "Blank Tab", false)
+	_spawn_tab(Vector2i(3, 2), TabBaseScript.Faction.NEUTRAL, "Blank Tab", false)
+	_spawn_tab(Vector2i(2, 1), TabBaseScript.Faction.NEUTRAL, "Blank Tab", false)
+	_spawn_tab(Vector2i(3, 3), TabBaseScript.Faction.NEUTRAL, "Blank Tab", false)
 
 	var gd = get_node_or_null("/root/GameData")
 	var is_tutorial: bool = gd != null and not gd.tutorial_done
@@ -144,7 +145,7 @@ func _advance_tutorial(step: int) -> void:
 				_tutorial_tab1_initial_pos = _player_tab_1.global_position
 			if _player_tab_2 and is_instance_valid(_player_tab_2):
 				_tutorial_tab2_initial_pos = _player_tab_2.global_position
-			var drop_world = grid_manager.grid_to_world_center(Vector2i(1, 3))
+			var drop_world = grid_manager.grid_to_world_center(Vector2i(1, 2))
 			var drop_screen = get_viewport().get_canvas_transform() * drop_world
 			hud.show_tutorial_step("Drag a tab to move it", Rect2(drop_screen - cs * 0.5, cs).grow(4.0))
 		3:
@@ -172,7 +173,7 @@ func _update_tutorial_highlight() -> void:
 				var pos = _player_tab_1.get_global_transform_with_canvas().origin
 				hud.update_tutorial_rect(Rect2(pos - cs * 0.5, cs).grow(4.0))
 		2:
-			var drop_world = grid_manager.grid_to_world_center(Vector2i(1, 3))
+			var drop_world = grid_manager.grid_to_world_center(Vector2i(1, 2))
 			var drop_screen = get_viewport().get_canvas_transform() * drop_world
 			hud.update_tutorial_rect(Rect2(drop_screen - cs * 0.5, cs).grow(4.0))
 		3:

@@ -7,14 +7,14 @@ extends Node2D
 signal tab_relocated(tab: Node, from_pos: Vector2i, to_pos: Vector2i)
 signal triangulation_detected(is_active: bool, l_tabs: Array)
 
-const GRID_COLS: int = 7
-const GRID_ROWS: int = 6
+const GRID_COLS: int = 6
+const GRID_ROWS: int = 5
 const TILE_WIDTH: float = 104.0
 const TILE_HEIGHT: float = 88.0
 const TILE_GAP: float = 8.0
 
-# Origin offset to center the grid on 1280x720 canvas
-const GRID_ORIGIN: Vector2 = Vector2(252.0, 92.0)
+# Origin offset to center the 6x5 grid on 1280x720 canvas
+const GRID_ORIGIN: Vector2 = Vector2(308.0, 142.0)
 
 var tiles: Dictionary = {} # Vector2i -> GridTile
 var tab_positions: Dictionary = {} # Node -> Vector2i
@@ -23,7 +23,51 @@ var grid_occupants: Dictionary = {} # Vector2i -> Node
 const TileScene: PackedScene = preload("res://scenes/battle/grid/tile.tscn")
 
 func _ready() -> void:
+	queue_redraw()
 	_generate_grid()
+
+func _draw() -> void:
+	var total_w := GRID_COLS * TILE_WIDTH + (GRID_COLS - 1) * TILE_GAP
+	var total_h := GRID_ROWS * TILE_HEIGHT + (GRID_ROWS - 1) * TILE_GAP
+	var pad := 14.0
+	var header_h := 30.0
+	var vp_rect := Rect2(
+		GRID_ORIGIN.x - pad,
+		GRID_ORIGIN.y - header_h - pad,
+		total_w + pad * 2.0,
+		total_h + header_h + pad * 2.0
+	)
+	var shadow_rect := Rect2(vp_rect.position + Vector2(3, 4), vp_rect.size)
+	
+	# Hard drop shadow
+	draw_rect(shadow_rect, Color(0.06, 0.09, 0.16, 1.0), true) # #0F172A
+	# Browser Viewport Background (#F8FAFC)
+	draw_rect(vp_rect, Color(0.97, 0.98, 0.99, 1.0), true) # #F8FAFC
+	# 3px dark navy/black border
+	draw_rect(vp_rect, Color(0.06, 0.09, 0.16, 1.0), false, 3.0)
+	
+	# Viewport Mini Toolbar Header
+	var header_rect := Rect2(vp_rect.position, Vector2(vp_rect.size.x, header_h))
+	draw_rect(header_rect, Color(0.89, 0.91, 0.94, 1.0), true) # #E2E8F0
+	draw_line(
+		Vector2(vp_rect.position.x, vp_rect.position.y + header_h),
+		Vector2(vp_rect.position.x + vp_rect.size.x, vp_rect.position.y + header_h),
+		Color(0.06, 0.09, 0.16, 1.0),
+		2.0
+	)
+	
+	# Mini traffic-light dots
+	var dot_y := vp_rect.position.y + header_h * 0.5
+	draw_circle(Vector2(vp_rect.position.x + 14, dot_y), 4.5, Color(0.94, 0.27, 0.27))
+	draw_circle(Vector2(vp_rect.position.x + 28, dot_y), 4.5, Color(0.96, 0.62, 0.04))
+	draw_circle(Vector2(vp_rect.position.x + 42, dot_y), 4.5, Color(0.06, 0.73, 0.51))
+	
+	# Mini address pill
+	var pill_rect := Rect2(vp_rect.position.x + 58, vp_rect.position.y + 5, vp_rect.size.x - 72, header_h - 10)
+	draw_rect(pill_rect, Color(1, 1, 1), true)
+	draw_rect(pill_rect, Color(0.80, 0.84, 0.88), false, 1.5)
+	var font := ThemeDB.fallback_font
+	draw_string(font, Vector2(pill_rect.position.x + 8, pill_rect.position.y + 14), "🔒 https://tab-tactics.lan/tactical-viewport [6x5 Grid - 30 Tiles]", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.28, 0.33, 0.41))
 
 func _generate_grid() -> void:
 	for y in range(GRID_ROWS):

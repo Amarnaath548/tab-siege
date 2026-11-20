@@ -1,133 +1,470 @@
-[gd_scene load_steps=2 format=3 uid="uid://ci7m8v4q1n3p9"]
+[gd_scene load_steps=18 format=3 uid="uid://ci7m8v4q1n3p9"]
 
 [ext_resource type="Script" path="res://scenes/battle/ui/battle_hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_top_chrome"]
+bg_color = Color(0.89, 0.91, 0.94, 1)
+border_width_bottom = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_strip"]
+bg_color = Color(0.80, 0.84, 0.88, 1)
+border_width_bottom = 2
+border_color = Color(0.06, 0.09, 0.16, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_active_tab"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.22, 0.74, 0.97, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rival_pill"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.94, 0.27, 0.27, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_url_pill"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(2, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bottom_dock"]
+bg_color = Color(0.12, 0.23, 0.37, 1)
+border_width_top = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(0, -3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_coin_badge"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.98, 0.75, 0.14, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(2, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_merge_badge"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.89, 0.91, 0.94, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.06, 0.09, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+shadow_color = Color(0.06, 0.09, 0.16, 1)
+shadow_offset = Vector2(2, 3)
 
 [node name="BattleHUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
-[node name="TopBar" type="Panel" parent="."]
-custom_minimum_size = Vector2(1280, 56)
+[node name="TopChrome" type="Panel" parent="."]
+custom_minimum_size = Vector2(1280, 94)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 56.0
+offset_bottom = 94.0
 grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_top_chrome")
 
-[node name="HBox" type="HBoxContainer" parent="TopBar"]
+[node name="TabStrip" type="Panel" parent="TopChrome"]
+custom_minimum_size = Vector2(1280, 38)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 38.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_tab_strip")
+
+[node name="HBox" type="HBoxContainer" parent="TopChrome/TabStrip"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_right = -20.0
+offset_left = 16.0
+offset_right = -16.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 12
 
-[node name="TimerContainer" type="HBoxContainer" parent="TopBar/HBox"]
+[node name="TrafficDots" type="HBoxContainer" parent="TopChrome/TabStrip/HBox"]
 layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="TopBar/HBox/TimerContainer"]
+[node name="RedDot" type="ColorRect" parent="TopChrome/TabStrip/HBox/TrafficDots"]
+custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+color = Color(0.94, 0.27, 0.27, 1)
+
+[node name="YellowDot" type="ColorRect" parent="TopChrome/TabStrip/HBox/TrafficDots"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+color = Color(0.96, 0.62, 0.04, 1)
+
+[node name="GreenDot" type="ColorRect" parent="TopChrome/TabStrip/HBox/TrafficDots"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+color = Color(0.06, 0.73, 0.51, 1)
+
+[node name="ActiveTabPill" type="PanelContainer" parent="TopChrome/TabStrip"]
+custom_minimum_size = Vector2(180, 32)
+layout_mode = 2
+offset_left = 90.0
+offset_top = 6.0
+offset_right = 270.0
+offset_bottom = 38.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_active_tab")
+
+[node name="HBox" type="HBoxContainer" parent="TopChrome/TabStrip/ActiveTabPill"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Favicon" type="Label" parent="TopChrome/TabStrip/ActiveTabPill/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.06, 0.09, 0.16, 1)
+theme_override_font_sizes/font_size = 12
+text = "🌐"
+
+[node name="TabNameLabel" type="Label" parent="TopChrome/TabStrip/ActiveTabPill/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.06, 0.09, 0.16, 1)
+theme_override_font_sizes/font_size = 12
+text = "My Tab"
+clip_text = true
+
+[node name="TabHPBar" type="ProgressBar" parent="TopChrome/TabStrip/ActiveTabPill/HBox"]
+custom_minimum_size = Vector2(40, 10)
+layout_mode = 2
+size_flags_vertical = 4
+value = 100.0
+show_percentage = false
+
+[node name="CloseBtn" type="Button" parent="TopChrome/TabStrip/ActiveTabPill/HBox"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_vertical = 4
+text = "✕"
+
+[node name="RivalPill1" type="PanelContainer" parent="TopChrome/TabStrip"]
+custom_minimum_size = Vector2(140, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -13.0
+offset_right = -170.0
+offset_bottom = 19.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rival_pill")
+
+[node name="HBox" type="HBoxContainer" parent="TopChrome/TabStrip/RivalPill1"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Skull" type="Label" parent="TopChrome/TabStrip/RivalPill1/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "⚔"
+
+[node name="Title" type="Label" parent="TopChrome/TabStrip/RivalPill1/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Rival Tab 1"
+clip_text = true
+
+[node name="RivalPill2" type="PanelContainer" parent="TopChrome/TabStrip"]
+custom_minimum_size = Vector2(140, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -13.0
+offset_right = -20.0
+offset_bottom = 19.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rival_pill")
+
+[node name="HBox" type="HBoxContainer" parent="TopChrome/TabStrip/RivalPill2"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Skull" type="Label" parent="TopChrome/TabStrip/RivalPill2/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💀"
+
+[node name="Title" type="Label" parent="TopChrome/TabStrip/RivalPill2/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Enemy Tab"
+clip_text = true
+
+[node name="URLBar" type="Control" parent="TopChrome"]
+custom_minimum_size = Vector2(1280, 54)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -54.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="CenterHBox" type="HBoxContainer" parent="TopChrome/URLBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="NavIcons" type="HBoxContainer" parent="TopChrome/URLBar/CenterHBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BackBtn" type="Button" parent="TopChrome/URLBar/CenterHBox/NavIcons"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "◀"
+
+[node name="ForwardBtn" type="Button" parent="TopChrome/URLBar/CenterHBox/NavIcons"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "▶"
+
+[node name="ReloadBtn" type="Button" parent="TopChrome/URLBar/CenterHBox/NavIcons"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+text = "⟳"
+
+[node name="AddressPill" type="PanelContainer" parent="TopChrome/URLBar/CenterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_url_pill")
+
+[node name="AddressHBox" type="HBoxContainer" parent="TopChrome/URLBar/CenterHBox/AddressPill"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Lock" type="Label" parent="TopChrome/URLBar/CenterHBox/AddressPill/AddressHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.77, 0.36, 1)
 theme_override_font_sizes/font_size = 14
-text = "TIME: "
+text = "🔒 https://tab-fold-tactics.lan/battle"
 
-[node name="TimerLabel" type="Label" parent="TopBar/HBox/TimerContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "03:00"
-
-[node name="CoinsContainer" type="HBoxContainer" parent="TopBar/HBox"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="TopBar/HBox/CoinsContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
-theme_override_font_sizes/font_size = 14
-text = "COINS: "
-
-[node name="CoinsLabel" type="Label" parent="TopBar/HBox/CoinsContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 1)
-theme_override_font_sizes/font_size = 18
-text = "$60"
-
-[node name="RefreshContainer" type="HBoxContainer" parent="TopBar/HBox"]
-layout_mode = 2
-
-[node name="RefreshLabel" type="Label" parent="TopBar/HBox/RefreshContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 14
-text = "REFRESH: 2/2"
-
-[node name="FocusContainer" type="HBoxContainer" parent="TopBar/HBox"]
+[node name="Spacer" type="Control" parent="TopChrome/URLBar/CenterHBox/AddressPill/AddressHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FocusLabel" type="Label" parent="TopBar/HBox/FocusContainer"]
+[node name="TimerLabel" type="Label" parent="TopChrome/URLBar/CenterHBox"]
+custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 14
-text = "FOCUS: Tab #1 (+50% BOOST)"
+theme_override_colors/font_color = Color(0.06, 0.09, 0.16, 1)
+theme_override_font_sizes/font_size = 20
+text = "03:00"
+horizontal_alignment = 1
 
-[node name="HoldContainer" type="HBoxContainer" parent="TopBar/HBox"]
+[node name="TugOfWarBar" type="ProgressBar" parent="TopChrome/URLBar/CenterHBox"]
+custom_minimum_size = Vector2(160, 20)
 layout_mode = 2
-theme_override_constants/separation = 10
+size_flags_vertical = 4
+max_value = 4.0
+value = 2.0
+show_percentage = false
 
-[node name="HoldLabel" type="Label" parent="TopBar/HBox/HoldContainer"]
+[node name="HoldContainer" type="HBoxContainer" parent="TopChrome/URLBar/CenterHBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.1, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_constants/separation = 8
+
+[node name="HoldLabel" type="Label" parent="TopChrome/URLBar/CenterHBox/HoldContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.62, 0.04, 1)
+theme_override_font_sizes/font_size = 13
 text = "L-HOLD: 0.0s / 30.0s"
 
-[node name="HoldBar" type="ProgressBar" parent="TopBar/HBox/HoldContainer"]
-custom_minimum_size = Vector2(120, 16)
+[node name="HoldBar" type="ProgressBar" parent="TopChrome/URLBar/CenterHBox/HoldContainer"]
+custom_minimum_size = Vector2(100, 16)
 layout_mode = 2
 size_flags_vertical = 4
 max_value = 30.0
 show_percentage = false
 
-[node name="BottomBar" type="Panel" parent="."]
-custom_minimum_size = Vector2(1280, 52)
+[node name="BottomDock" type="Panel" parent="."]
+custom_minimum_size = Vector2(1280, 68)
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -52.0
+offset_top = -68.0
 grow_horizontal = 2
 grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bottom_dock")
 
-[node name="HBox" type="HBoxContainer" parent="BottomBar"]
+[node name="HBox" type="HBoxContainer" parent="BottomDock"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_right = -20.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 14
 
-[node name="BuyTowerBtn" type="Button" parent="BottomBar/HBox"]
-custom_minimum_size = Vector2(180, 36)
+[node name="CoinBadge" type="PanelContainer" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(130, 42)
 layout_mode = 2
-size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_coin_badge")
+
+[node name="CoinsLabel" type="Label" parent="BottomDock/HBox/CoinBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.06, 0.09, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "$60 Coins"
+horizontal_alignment = 1
+
+[node name="MergeIndicator" type="PanelContainer" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_merge_badge")
+
+[node name="MergeLabel" type="Label" parent="BottomDock/HBox/MergeIndicator"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.06, 0.09, 0.16, 1)
+theme_override_font_sizes/font_size = 12
+text = "[Unit] ➔ [Upgraded]"
+horizontal_alignment = 1
+
+[node name="BuyTowerBtn" type="Button" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
 text = "+ BUY TOWER ($20)"
 
-[node name="StrikeBtn" type="Button" parent="BottomBar/HBox"]
-custom_minimum_size = Vector2(220, 36)
+[node name="FocusBtn" type="Button" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(145, 42)
 layout_mode = 2
-size_flags_vertical = 4
-text = "DIRECT CURSOR STRIKE ($15)"
+text = "((◎)) FOCUS (+50%)"
 
-[node name="InfoLabel" type="Label" parent="BottomBar/HBox"]
+[node name="StrikeBtn" type="Button" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
+text = "☝ STRIKE ($15)"
+
+[node name="RefreshRushBtn" type="Button" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+
+[node name="BtnLabel" type="Label" parent="BottomDock/HBox/RefreshRushBtn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "⟳ REFRESH (2/2)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="BottomDock/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "Controls: Single-Click Tab: Focus | Double-Click: Refresh Rush | Drag Tab: Relocate (<= 4 tiles) | Click [X]: Sacrifice Shield"
-vertical_alignment = 1
+
+[node name="PipsContainer" type="HBoxContainer" parent="BottomDock/HBox"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Pip1" type="Label" parent="BottomDock/HBox/PipsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "☆"
+
+[node name="Pip2" type="Label" parent="BottomDock/HBox/PipsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "☆"
+
+[node name="Pip3" type="Label" parent="BottomDock/HBox/PipsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "☆"
+
+[node name="AtlasBtn" type="Button" parent="BottomDock/HBox"]
+custom_minimum_size = Vector2(170, 42)
+layout_mode = 2
+text = "🔖 BOOKMARK ATLAS"
 
 [node name="EndModal" type="ColorRect" parent="."]
 visible = false
@@ -139,17 +476,17 @@ grow_vertical = 2
 color = Color(0.04, 0.05, 0.08, 0.85)
 
 [node name="Panel" type="Panel" parent="EndModal"]
-custom_minimum_size = Vector2(500, 300)
+custom_minimum_size = Vector2(520, 320)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = -150.0
-offset_right = 250.0
-offset_bottom = 150.0
+offset_left = -260.0
+offset_top = -160.0
+offset_right = 260.0
+offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
 

@@ -25,12 +25,12 @@ enum Faction {
 var current_hp: float = 100.0
 var is_active_focused: bool = false
 
-# Drag state with 8-pixel deadzone
+# Drag state with 10-pixel deadzone
 var is_dragging: bool = false
 var drag_start_mouse_pos: Vector2 = Vector2.ZERO
 var drag_offset: Vector2 = Vector2.ZERO
 var original_grid_pos: Vector2i = Vector2i.ZERO
-const DRAG_DEADZONE: float = 8.0
+const DRAG_DEADZONE: float = 10.0
 
 # Timers
 var inert_timer: float = 0.0 # 3s inert after relocation
@@ -40,9 +40,9 @@ var refresh_coin_penalty_timer: float = 0.0 # 4s no coin generation after refres
 var shield_timer: float = 0.0 # 4s sacrifice shield invulnerability
 var enemy_capture_pause_timer: float = 0.0 # 2s pause when refreshed under attack
 
-# Double click tracking
+# Double click tracking (must be < 250ms)
 var last_click_time: float = -10.0
-const DOUBLE_CLICK_WINDOW: float = 0.35
+const DOUBLE_CLICK_WINDOW: float = 0.25
 
 # Attached towers
 var towers: Array[TabTower] = []
@@ -444,6 +444,15 @@ func _on_close_sacrifice_clicked() -> void:
 	if not is_player():
 		return
 
+	var bm = get_node_or_null("/root/BattleManager")
+	# Enforce Close Tab Sacrifice Shield guardrails:
+	# Disabled if player has <= 1 tab or < 3 viable grid tiles remain
+	if bm and not bm.can_sacrifice_tab(self, grid_manager):
+		var synth_err = get_node_or_null("/root/AudioSynth")
+		if synth_err and synth_err.has_method("play_defeat"):
+			synth_err.play_defeat()
+		return
+
 	var synth = get_node_or_null("/root/AudioSynth")
 	if synth:
 		synth.play_sacrifice()
@@ -459,18 +468,23 @@ func _on_close_sacrifice_clicked() -> void:
 			total_tower_cost += t.get_cost()
 	
 	var refund_amount: int = int(round(float(total_tower_cost) * refund_ratio))
-	var bm = get_node_or_null("/root/BattleManager")
 	if bm:
 		bm.add_coins(refund_amount)
+		bm.record_player_tab_lost()
 
-	# Shield adjacent friendly tab
+	# Prioritizes shielding an L-shape tab for 4.0s
 	if grid_manager != null:
 		var current_pos := grid_manager.get_tab_grid_pos(self)
 		var neighbors := grid_manager.get_adjacent_friendly_tabs(current_pos)
-		for neighbor in neighbors:
-			if neighbor != self and is_instance_valid(neighbor) and neighbor.has_method("apply_sacrifice_shield"):
-				neighbor.apply_sacrifice_shield(shield_duration)
-				break
+		var target_shield: Node = null
+		if bm and bm.has_method("find_best_sacrifice_shield_target"):
+			target_shield = bm.find_best_sacrifice_shield_target(self, neighbors)
+		elif not neighbors.is_empty():
+			target_shield = neighbors[0]
+
+		if target_shield != null and is_instance_valid(target_shield) and target_shield.has_method("apply_sacrifice_shield"):
+			target_shield.apply_sacrifice_shield(shield_duration)
+
 		grid_manager.unregister_tab(self)
 
 	_spawn_death_particles()
@@ -505,6 +519,10 @@ func take_damage(amount: float, attacker_faction: String) -> void:
 	queue_redraw()
 
 	if current_hp <= 0.0:
+		if is_player():
+			var bm = get_node_or_null("/root/BattleManager")
+			if bm:
+				bm.record_player_tab_lost()
 		_on_tab_death()
 		_on_captured(attacker_faction)
 
@@ -618,68 +636,77 @@ func _draw() -> void:
 	var tab_w: float = 96.0
 	var tab_h: float = 80.0
 	var rect := Rect2(-tab_w * 0.5, -tab_h * 0.5, tab_w, tab_h)
+	var shadow_rect := Rect2(rect.position + Vector2(3, 4), rect.size)
 
-	# Faction theme colors
+	# Faction theme colors with vibrant flat-vector solid fills
 	var header_col: Color
 	var body_col: Color
-	var border_col: Color
+	var border_col: Color = Color(0.06, 0.09, 0.16) # #0F172A
 
 	match faction:
 		Faction.PLAYER:
-			header_col = Color(0.18, 0.38, 0.65)
-			body_col = Color(0.14, 0.20, 0.28, 0.95)
-			border_col = COLOR_FOCUS if is_active_focused else COLOR_PLAYER
+			if is_active_focused:
+				header_col = Color(0.15, 0.45, 0.85) # Rich Chrome blue
+				body_col = Color(0.22, 0.74, 0.97)   # Vibrant Cyan/Blue #38BDF8
+			else:
+				header_col = Color(0.12, 0.35, 0.65)
+				body_col = Color(0.15, 0.55, 0.85)
 		Faction.RIVAL:
-			header_col = Color(0.65, 0.22, 0.22)
-			body_col = Color(0.28, 0.14, 0.14, 0.95)
-			border_col = COLOR_RIVAL
+			header_col = Color(0.72, 0.11, 0.11) # Alert red header #B91C1C
+			body_col = Color(0.94, 0.27, 0.27)   # Solid red #EF4444
 		Faction.NEUTRAL:
-			header_col = Color(0.28, 0.32, 0.38)
-			body_col = Color(0.18, 0.20, 0.24, 0.95)
-			border_col = Color(0.45, 0.50, 0.58)
+			header_col = Color(0.40, 0.46, 0.54) # Neutral slate
+			body_col = Color(0.88, 0.91, 0.94)   # Blank Tab light #E2E8F0
 
-	# 1. Bold flat-color ring for Active Tab Focus
+	# 1. Hard offset drop shadow (Vector2(3, 4), shadow_size = 0)
+	draw_rect(shadow_rect, Color(0.06, 0.09, 0.16), true)
+
+	# 2. Bold flat ring for Active Tab Focus
 	if is_active_focused and is_player():
 		var ring_rect := rect.grow(5.0)
-		draw_rect(ring_rect, COLOR_FOCUS, false, 3.5)
+		draw_rect(ring_rect, Color(0.96, 0.62, 0.04), false, 3.5) # Amber #F59E0B
 
-	# 2. Tab Body background & border
+	# 3. Tab Body background & 3px dark navy border
 	draw_rect(rect, body_col, true)
-	draw_rect(rect, border_col, false, 1.5)
+	draw_rect(rect, border_col, false, 3.0)
 
-	# 3. Tab Header bar
-	var header_rect := Rect2(-tab_w * 0.5, -tab_h * 0.5, tab_w, 20.0)
+	# 4. Tab Header bar
+	var header_rect := Rect2(-tab_w * 0.5, -tab_h * 0.5, tab_w, 22.0)
 	draw_rect(header_rect, header_col, true)
-	draw_rect(header_rect, border_col, false, 1.0)
+	draw_rect(header_rect, border_col, false, 2.0)
 
-	# 4. Favicon dot
-	var fav_col := COLOR_FOCUS if (is_active_focused and is_player()) else (COLOR_PLAYER if is_player() else (COLOR_RIVAL if is_rival() else Color(0.8, 0.8, 0.8)))
-	draw_circle(Vector2(-tab_w * 0.5 + 10.0, -tab_h * 0.5 + 10.0), 4.0, fav_col)
+	# 5. Favicon dot
+	var fav_col := Color(0.96, 0.62, 0.04) if (is_active_focused and is_player()) else (Color(1, 1, 1) if is_player() else (Color(1, 0.8, 0.8) if is_rival() else Color(0.6, 0.6, 0.6)))
+	draw_circle(Vector2(-tab_w * 0.5 + 11.0, -tab_h * 0.5 + 11.0), 4.5, fav_col)
+	draw_circle(Vector2(-tab_w * 0.5 + 11.0, -tab_h * 0.5 + 11.0), 4.5, border_col, false, 1.5)
 
-	# 5. Tab Title string
+	# 6. Tab Title string
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(-tab_w * 0.5 + 20.0, -tab_h * 0.5 + 14.0), tab_title, HORIZONTAL_ALIGNMENT_LEFT, 52, 10, Color.WHITE)
+	var text_col := Color.WHITE if (faction != Faction.NEUTRAL) else Color(0.1, 0.15, 0.2)
+	draw_string(font, Vector2(-tab_w * 0.5 + 20.0, -tab_h * 0.5 + 15.0), tab_title, HORIZONTAL_ALIGNMENT_LEFT, 50, 10, text_col)
 
-	# 6. Close button 'X' (only shown for player tabs)
+	# 7. Close button 'X' (only shown for player tabs)
 	if is_player():
-		var close_center := Vector2(tab_w * 0.5 - 10.0, -tab_h * 0.5 + 10.0)
-		draw_line(close_center + Vector2(-3, -3), close_center + Vector2(3, 3), Color(0.9, 0.6, 0.6), 1.5)
-		draw_line(close_center + Vector2(3, -3), close_center + Vector2(-3, 3), Color(0.9, 0.6, 0.6), 1.5)
+		var close_center := Vector2(tab_w * 0.5 - 11.0, -tab_h * 0.5 + 11.0)
+		var close_box := Rect2(close_center - Vector2(7, 7), Vector2(14, 14))
+		draw_rect(close_box, Color(0.94, 0.27, 0.27), true)
+		draw_rect(close_box, border_col, false, 1.5)
+		draw_line(close_center + Vector2(-3, -3), close_center + Vector2(3, 3), Color.WHITE, 2.0)
+		draw_line(close_center + Vector2(3, -3), close_center + Vector2(-3, 3), Color.WHITE, 2.0)
 
-	# 7. HP / Capture Progress Bar at the bottom of the tab
+	# 8. HP / Capture Progress Bar at the bottom of the tab
 	var hp_pct := clampf(current_hp / max_hp, 0.0, 1.0)
-	var hp_bg_rect := Rect2(-tab_w * 0.5 + 6.0, tab_h * 0.5 - 10.0, tab_w - 12.0, 5.0)
-	var hp_fill_rect := Rect2(-tab_w * 0.5 + 6.0, tab_h * 0.5 - 10.0, (tab_w - 12.0) * hp_pct, 5.0)
-	draw_rect(hp_bg_rect, Color(0.1, 0.1, 0.1, 0.8), true)
-	var hp_col := Color(0.2, 0.85, 0.3) if hp_pct > 0.4 else Color(0.95, 0.7, 0.1)
+	var hp_bg_rect := Rect2(-tab_w * 0.5 + 6.0, tab_h * 0.5 - 12.0, tab_w - 12.0, 7.0)
+	var hp_fill_rect := Rect2(-tab_w * 0.5 + 6.0, tab_h * 0.5 - 12.0, (tab_w - 12.0) * hp_pct, 7.0)
+	draw_rect(hp_bg_rect, Color(0.06, 0.09, 0.16), true)
+	var hp_col := Color(0.13, 0.77, 0.36) if hp_pct > 0.45 else (Color(0.96, 0.62, 0.04) if hp_pct > 0.2 else Color(0.94, 0.27, 0.27))
 	draw_rect(hp_fill_rect, hp_col, true)
+	draw_rect(hp_bg_rect, border_col, false, 1.5)
 
-	# Note: Pin and Shield icons are rendered via Sprite2D nodes (pin_sprite, shield_sprite)
-	# with AtlasTextures pin_icon.tres and shield_icon.tres instead of primitive drawn shapes.
-
-	# 8. Inert downtime visual (3s relocation downtime)
+	# 9. Inert downtime visual (3s relocation downtime)
 	if is_inert():
 		var inert_overlay := Rect2(-tab_w * 0.5, -tab_h * 0.5, tab_w, tab_h)
-		draw_rect(inert_overlay, Color(0.1, 0.1, 0.15, 0.6), true)
+		draw_rect(inert_overlay, Color(0.06, 0.09, 0.16, 0.75), true)
+		draw_rect(inert_overlay, border_col, false, 3.0)
 		var inert_str := "INERT (%.1fs)" % inert_timer
-		draw_string(font, Vector2(-32, 2), inert_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, COLOR_FOCUS)
+		draw_string(font, Vector2(-36, 4), inert_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color(0.96, 0.62, 0.04))

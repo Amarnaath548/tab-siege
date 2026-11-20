@@ -17,13 +17,14 @@ var grid_pos: Vector2i = Vector2i.ZERO
 var highlight_state: HighlightState = HighlightState.NORMAL
 var occupant_tab: Node = null # Reference to current TabBase if occupied
 
-const COLOR_NORMAL_BG: Color = Color(0.12, 0.14, 0.18, 0.6)
-const COLOR_NORMAL_BORDER: Color = Color(0.22, 0.26, 0.32, 0.8)
-const COLOR_HOVER_BORDER: Color = Color(0.4, 0.5, 0.65, 0.9)
-const COLOR_VALID_DROP_BG: Color = Color(0.1, 0.5, 0.8, 0.25)
-const COLOR_VALID_DROP_BORDER: Color = Color(0.2, 0.8, 1.0, 0.95)
-const COLOR_INVALID_DROP_BG: Color = Color(0.6, 0.1, 0.1, 0.2)
-const COLOR_INVALID_DROP_BORDER: Color = Color(0.9, 0.2, 0.2, 0.8)
+const COLOR_NORMAL_BG: Color = Color(1.0, 1.0, 1.0, 0.95)
+const COLOR_NORMAL_BORDER: Color = Color(0.80, 0.84, 0.88, 1.0) # #CBD5E1
+const COLOR_HOVER_BG: Color = Color(0.95, 0.97, 1.0, 1.0)
+const COLOR_HOVER_BORDER: Color = Color(0.06, 0.09, 0.16, 1.0) # #0F172A
+const COLOR_VALID_DROP_BG: Color = Color(0.86, 0.99, 0.91, 0.9) # #DCFCE7
+const COLOR_VALID_DROP_BORDER: Color = Color(0.09, 0.64, 0.29, 1.0) # #16A34A
+const COLOR_INVALID_DROP_BG: Color = Color(0.99, 0.89, 0.89, 0.9) # #FEE2E2
+const COLOR_INVALID_DROP_BORDER: Color = Color(0.86, 0.15, 0.15, 1.0) # #DC2626
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(104, 88)
@@ -48,22 +49,25 @@ func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var bg_col := COLOR_NORMAL_BG
 	var border_col := COLOR_NORMAL_BORDER
-	var border_width: float = 1.0
+	var border_width: float = 1.5
 
 	match highlight_state:
 		HighlightState.HOVER:
+			bg_col = COLOR_HOVER_BG
 			border_col = COLOR_HOVER_BORDER
-			border_width = 1.5
+			border_width = 3.0
+			draw_rect(Rect2(Vector2(3, 4), size), Color(0.06, 0.09, 0.16, 0.25), true)
 		HighlightState.VALID_DROP:
 			bg_col = COLOR_VALID_DROP_BG
 			border_col = COLOR_VALID_DROP_BORDER
-			border_width = 2.5
+			border_width = 3.0
+			draw_rect(Rect2(Vector2(3, 4), size), Color(0.06, 0.09, 0.16, 0.25), true)
 		HighlightState.INVALID_DROP:
 			bg_col = COLOR_INVALID_DROP_BG
 			border_col = COLOR_INVALID_DROP_BORDER
-			border_width = 2.0
+			border_width = 3.0
 
-	# Rounded tab dock background
+	# Fill & crisp outline
 	draw_rect(rect, bg_col, true)
 	draw_rect(rect, border_col, false, border_width)
 
@@ -71,7 +75,7 @@ func _draw() -> void:
 	var coord_str := "%d,%d" % [grid_pos.x, grid_pos.y]
 	var font := ThemeDB.fallback_font
 	var font_size := 9
-	draw_string(font, Vector2(6, 14), coord_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.4, 0.45, 0.55, 0.4))
+	draw_string(font, Vector2(6, 14), coord_str, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.58, 0.64, 0.72, 0.85))
 
 func _on_mouse_entered() -> void:
 	if highlight_state == HighlightState.NORMAL:

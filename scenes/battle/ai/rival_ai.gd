@@ -10,14 +10,18 @@ var base_strike_interval: float = 4.5
 var aggressive_strike_interval: float = 2.2
 var tower_build_timer: float = 0.0
 var tower_build_interval: float = 6.0
+var enemy_spawn_timer: float = 0.0
+var enemy_spawn_interval: float = 4.2
 
 var rival_coins: int = 50
 var grid_manager: GridManager = null
 
 const CursorStrikeScene: PackedScene = preload("res://scenes/battle/cursor_strike/cursor_strike.tscn")
+const EnemyScene: PackedScene = preload("res://scenes/battle/enemy/enemy.tscn")
 
 func _ready() -> void:
 	strike_timer = 3.0 # Initial grace period before first strike
+	enemy_spawn_timer = 2.0
 
 func _process(delta: float) -> void:
 	var bm = get_node_or_null("/root/BattleManager")
@@ -39,6 +43,32 @@ func _process(delta: float) -> void:
 	if tower_build_timer >= tower_build_interval:
 		tower_build_timer = 0.0
 		_manage_ai_towers()
+
+	# Tick enemy wave spawner (Pop-Up Swarm, Cookie Tracker, Malware Brute)
+	enemy_spawn_timer += delta
+	if enemy_spawn_timer >= enemy_spawn_interval:
+		enemy_spawn_timer = 0.0
+		_spawn_enemy(bm)
+
+func _spawn_enemy(bm: Node) -> void:
+	var enemy_type: Enemy.EnemyType = Enemy.EnemyType.POP_UP_SWARM
+	if bm.is_triangulation_holding:
+		enemy_type = Enemy.EnemyType.MALWARE_BRUTE
+	elif bm.coins >= 80:
+		enemy_type = Enemy.EnemyType.COOKIE_TRACKER
+	else:
+		var r := randf()
+		if r < 0.5:
+			enemy_type = Enemy.EnemyType.POP_UP_SWARM
+		elif r < 0.8:
+			enemy_type = Enemy.EnemyType.COOKIE_TRACKER
+		else:
+			enemy_type = Enemy.EnemyType.MALWARE_BRUTE
+
+	var spawn_pos := Vector2(randf_range(820.0, 960.0), randf_range(200.0, 520.0))
+	var enemy = EnemyScene.instantiate()
+	enemy.init_enemy(enemy_type, spawn_pos)
+	get_tree().current_scene.add_child(enemy)
 
 func _execute_ai_cursor_strike(bm: Node) -> void:
 	var target_tab: Node = null
