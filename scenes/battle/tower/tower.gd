@@ -32,6 +32,41 @@ var sprite: Sprite2D:
 			_setup_sprite()
 		return _sprite
 
+class TierLabel extends Node2D:
+	var label: Label = null
+	
+	var text: String:
+		get:
+			return label.text if label else ""
+		set(v):
+			if label:
+				label.text = v
+	
+	func _init() -> void:
+		name = "TierLabel"
+		label = Label.new()
+		label.name = "Label"
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 9)
+		label.size = Vector2(24, 14)
+		label.position = Vector2(-12, -7)
+		add_child(label)
+		z_index = 2
+	
+	func add_theme_color_override(prop: String, col: Color) -> void:
+		if label:
+			label.add_theme_color_override(prop, col)
+
+var _tier_label: Node2D = null
+var tier_label: Node2D:
+	get:
+		if _tier_label == null:
+			_setup_tier_label()
+		return _tier_label
+	set(val):
+		_tier_label = val
+
 const COLOR_PLAYER := Color(0.25, 0.85, 1.0) # Cyan/Blue
 const COLOR_RIVAL := Color(0.95, 0.25, 0.25)  # Crimson
 const COLOR_FOCUS := Color(1.0, 0.82, 0.15)  # Gold
@@ -50,11 +85,13 @@ static func _load_atlas(filename: String) -> Texture2D:
 
 func _enter_tree() -> void:
 	_setup_sprite()
+	_setup_tier_label()
 	_update_tier_stats()
 	_update_visuals()
 
 func _ready() -> void:
 	_setup_sprite()
+	_setup_tier_label()
 	_update_tier_stats()
 	_update_visuals()
 	queue_redraw()
@@ -73,12 +110,14 @@ func set_tier(new_tier: Tier) -> void:
 	tier = new_tier
 	_update_tier_stats()
 	_update_visuals()
+	_update_tier_label()
 	queue_redraw()
 	tower_merged.emit(int(tier))
 
 func set_active_focus(focused: bool) -> void:
 	is_active_focused = focused
 	_update_visuals()
+	_update_tier_label()
 	queue_redraw()
 
 func _update_visuals() -> void:
@@ -117,6 +156,31 @@ func _update_visuals() -> void:
 		_sprite.modulate = COLOR_FOCUS
 	else:
 		_sprite.modulate = COLOR_PLAYER
+
+	_update_tier_label()
+
+func _setup_tier_label() -> void:
+	if _tier_label == null:
+		_tier_label = get_node_or_null("TierLabel") as Node2D
+		if _tier_label == null:
+			_tier_label = TierLabel.new()
+			add_child(_tier_label)
+		_tier_label.position = Vector2(0, -15)
+	_update_tier_label()
+
+func _update_tier_label() -> void:
+	if _tier_label == null:
+		return
+	if "text" in _tier_label:
+		_tier_label.text = "T%d" % int(tier)
+	var badge_col := COLOR_RIVAL if faction == "rival" else (COLOR_FOCUS if is_active_focused else COLOR_PLAYER)
+	if _tier_label.has_method("add_theme_color_override"):
+		_tier_label.add_theme_color_override("font_color", badge_col)
+
+func _process(_delta: float) -> void:
+	if _tier_label != null and is_instance_valid(_tier_label):
+		_tier_label.global_rotation = 0.0
+		_tier_label.global_position = global_position + Vector2(0, -15)
 
 func _update_tier_stats() -> void:
 	match tier:
@@ -163,6 +227,9 @@ func process_firing(delta: float, fire_rate_multiplier: float, can_fire: bool) -
 		# Look at target
 		var dir: Vector2 = (target_tab.global_position - global_position).normalized()
 		rotation = lerp_angle(rotation, dir.angle(), delta * 10.0)
+		if _tier_label != null and is_instance_valid(_tier_label):
+			_tier_label.global_rotation = 0.0
+			_tier_label.global_position = global_position + Vector2(0, -15)
 		
 		# Tick fire timer
 		var effective_interval := base_fire_interval / fire_rate_multiplier
@@ -211,8 +278,5 @@ func _fire_projectile() -> void:
 	tower_fired.emit()
 
 func _draw() -> void:
-	# Subtle tier badge label above the turret for instant readability
-	var font := ThemeDB.fallback_font
-	var tier_label_str := "T%d" % int(tier)
-	var badge_col := COLOR_RIVAL if faction == "rival" else (COLOR_FOCUS if is_active_focused else COLOR_PLAYER)
-	draw_string(font, Vector2(-6, -11), tier_label_str, HORIZONTAL_ALIGNMENT_CENTER, -1, 9, badge_col)
+	# Tier badge is rendered upright via tier_label Label node
+	pass

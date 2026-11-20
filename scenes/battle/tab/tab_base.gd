@@ -553,9 +553,28 @@ func _on_captured(by_faction: String) -> void:
 	current_hp = max_hp
 	var new_f := Faction.PLAYER if by_faction == "player" else Faction.RIVAL
 	set_faction(new_f)
+	if by_faction == "player":
+		tab_title = _generate_player_tab_title()
 	tab_captured.emit(self, by_faction)
 	if grid_manager:
 		grid_manager.check_triangulation()
+	queue_redraw()
+
+func _generate_player_tab_title() -> String:
+	var existing_numbers: Array[int] = []
+	if get_tree() != null:
+		var all_tabs := get_tree().get_nodes_in_group("tabs")
+		for t in all_tabs:
+			if is_instance_valid(t) and t != self and t.has_method("is_player") and t.is_player():
+				var title: String = t.tab_title if "tab_title" in t else ""
+				if title.begins_with("Tab #"):
+					var num_str := title.substr(5).strip_edges()
+					if num_str.is_valid_int():
+						existing_numbers.append(num_str.to_int())
+	var next_num := 1
+	while next_num in existing_numbers:
+		next_num += 1
+	return "Tab #%d" % next_num
 
 func add_tower(tier: TabTower.Tier = TabTower.Tier.TIER_1) -> bool:
 	var tower: TabTower = TowerScene.instantiate()

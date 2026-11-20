@@ -204,6 +204,35 @@ func test_tab_base_and_combat() -> void:
 	# Test 8-pixel drag deadzone logic
 	assert(tab.DRAG_DEADZONE == 8.0, "Deadzone must be exactly 8 pixels")
 	
+	# Test turret tier label remains upright when turret rotates
+	var tower: TabTower = tab.towers[0]
+	assert(tower.tier_label != null, "Tower must have a tier_label Label node")
+	assert(tower.tier_label.text == "T4", "Tower tier label text should reflect tier, got: %s" % tower.tier_label.text)
+	for angle in [0.0, 0.78, 1.57, 3.14, -2.1]:
+		tower.rotation = angle
+		tower._process(0.016)
+		assert(is_zero_approx(tower.tier_label.global_rotation), "Tower tier label global_rotation must be 0.0 when turret rotates to %f, got: %f" % [angle, tower.tier_label.global_rotation])
+
+	# Test tab capture by player updates tab title cleanly (neutral -> Tab #3, rival -> Tab #4)
+	var neutral_tab: TabBase = TabScene.instantiate()
+	neutral_tab.faction = TabBase.Faction.NEUTRAL
+	neutral_tab.tab_title = "about:cache"
+	add_child(neutral_tab)
+	neutral_tab.take_damage(100.0, "player")
+	assert(neutral_tab.is_player() == true, "Neutral tab should become player faction on capture")
+	assert(neutral_tab.tab_title == "Tab #3" or neutral_tab.tab_title.begins_with("Tab #"), "Captured neutral tab title should be updated to clean player name, got: %s" % neutral_tab.tab_title)
+
+	var rival_tab: TabBase = TabScene.instantiate()
+	rival_tab.faction = TabBase.Faction.RIVAL
+	rival_tab.tab_title = "rival://nexus"
+	add_child(rival_tab)
+	rival_tab.take_damage(100.0, "player")
+	assert(rival_tab.is_player() == true, "Rival tab should become player faction on capture")
+	assert(rival_tab.tab_title != "rival://nexus" and rival_tab.tab_title.begins_with("Tab #"), "Captured rival tab title should be updated to clean player name, got: %s" % rival_tab.tab_title)
+
+	neutral_tab.queue_free()
+	rival_tab.queue_free()
+
 	print("TabBase and Combat tests passed!")
 
 func test_end_to_end_battle_and_atlas() -> void:
